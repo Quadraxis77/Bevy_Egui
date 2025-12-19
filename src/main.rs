@@ -134,7 +134,7 @@ fn ui_system(
 
         // Show menu bar at the top
         egui::TopBottomPanel::top("menu_bar").show(ctx, |ui| {
-            egui::menu::bar(ui, |ui| {
+            egui::MenuBar::new().ui(ui, |ui| {
                 ui.menu_button("Windows", |ui| {
                     show_windows_menu(ui, &mut dock_resource.tree);
                 });
