@@ -29,7 +29,7 @@ fn main() {
         .add_plugins(EguiPlugin::default())
         .add_plugins(ScenePlugin)
         .add_plugins(DragPlugin)
-        .add_systems(Startup, setup_dock)
+        .add_systems(Startup, (setup_dock, maximize_window))
         .add_systems(EguiPrimaryContextPass, ui_system)
         .add_systems(Update, auto_save_dock_state)
         .run();
@@ -144,6 +144,12 @@ fn setup_dock(mut commands: Commands) {
     commands.init_resource::<ViewportRect>();
 }
 
+fn maximize_window(mut windows: Query<&mut Window>) {
+    for mut window in windows.iter_mut() {
+        window.set_maximized(true);
+    }
+}
+
 fn ui_system(
     mut contexts: Query<&mut EguiContext>,
     mut dock_resource: ResMut<DockResource>,
@@ -151,6 +157,9 @@ fn ui_system(
 ) {
     for mut egui_context in contexts.iter_mut() {
         let ctx = egui_context.get_mut();
+
+        // Clear viewport rect at the start of each frame
+        viewport_rect.rect = None;
 
         // Show menu bar at the top
         egui::TopBottomPanel::top("menu_bar").show(ctx, |ui| {
@@ -269,11 +278,15 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
         match tab {
             Panel::Viewport => {
                 // Capture the viewport rect for mouse interaction
-                self.viewport_rect.rect = Some(ui.max_rect());
-                // Don't draw anything - let the 3D scene show through
+                let rect = ui.available_rect_before_wrap();
+                self.viewport_rect.rect = Some(rect);
+                
+                // Don't draw anything else - let the 3D scene show through
             }
             // Other placeholder panels are completely empty
             Panel::LeftPanel | Panel::RightPanel | Panel::BottomPanel => {
+                // Clear viewport rect for placeholder panels
+                // (though they should be rendered after viewport in the tree)
                 // No content - empty placeholder
             }
             Panel::Inspector => {
@@ -295,8 +308,8 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                 ui.separator();
                 ui.label("Scene object tree");
                 ui.add_space(10.0);
-                ui.label("📁 Scene");
-                ui.label("  └─ 📦 Entity");
+                ui.label("� Scetne");
+                ui.label("  └─ � Ent;ity");
             }
             Panel::Assets => {
                 ui.heading("Assets");

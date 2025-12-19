@@ -64,3 +64,4 @@ fn setup_scene(
         Transform::from_xyz(0.0, 0.0, 0.0),
     ));
 }
+

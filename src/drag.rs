@@ -37,45 +37,42 @@ fn handle_mouse_input(
         return;
     };
 
-    // Get egui context for scale factor
+    // Get egui context
     let Ok(mut egui_ctx) = egui_context.single_mut() else {
         return;
     };
     let ctx = egui_ctx.get_mut();
-    let pixels_per_point = ctx.pixels_per_point();
 
     // Handle mouse press - start dragging
     if mouse_button.just_pressed(MouseButton::Left) {
         if let Some(cursor_position) = window.cursor_position() {
-            // Check if cursor is within viewport rect
-            let Some(rect) = viewport_rect.rect else {
-                info!("No viewport rect available");
-                return;
-            };
+            // Get the pointer position directly from egui context
+            // This is already in the correct egui coordinate space
+            let egui_pos = ctx.pointer_latest_pos();
+            
+            if let Some(egui_pos) = egui_pos {
+                // Check if we're in the viewport rect
+                let in_viewport = viewport_rect.rect.map_or(false, |rect| rect.contains(egui_pos));
+                
+                // Only allow interaction if we're in the viewport (not over other UI panels)
+                if !in_viewport {
+                    return;
+                }
 
-            // Convert cursor position from Bevy (physical pixels, bottom-left origin)
-            // to egui (logical pixels, top-left origin)
-            let egui_pos = egui::pos2(
-                cursor_position.x / pixels_per_point,
-                (window.height() - cursor_position.y) / pixels_per_point
-            );
+                // Raycast to check if we hit the sphere
+                if let Ok(ray) = camera.viewport_to_world(camera_transform, cursor_position) {
+                    // Check if ray hits any sphere
+                    for (entity, sphere_transform) in sphere_query.iter() {
+                        let sphere_pos = sphere_transform.translation();
+                        let sphere_radius = 0.5;
 
-            if !rect.contains(egui_pos) {
-                return;
-            }
-
-            if let Ok(ray) = camera.viewport_to_world(camera_transform, cursor_position) {
-                // Check if ray hits any sphere
-                for (entity, sphere_transform) in sphere_query.iter() {
-                    let sphere_pos = sphere_transform.translation();
-                    let sphere_radius = 0.5;
-
-                    if let Some(distance) = ray_sphere_intersection(ray.origin, *ray.direction, sphere_pos, sphere_radius) {
-                        let hit_point = ray.origin + *ray.direction * distance;
-                        drag_state.dragging = Some(entity);
-                        drag_state.drag_offset = sphere_pos - hit_point;
-                        drag_state.drag_plane_distance = distance;
-                        break;
+                        if let Some(distance) = ray_sphere_intersection(ray.origin, *ray.direction, sphere_pos, sphere_radius) {
+                            let hit_point = ray.origin + *ray.direction * distance;
+                            drag_state.dragging = Some(entity);
+                            drag_state.drag_offset = sphere_pos - hit_point;
+                            drag_state.drag_plane_distance = distance;
+                            break;
+                        }
                     }
                 }
             }
