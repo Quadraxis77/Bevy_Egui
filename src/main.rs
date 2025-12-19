@@ -74,6 +74,7 @@ impl std::fmt::Display for Panel {
 #[derive(Resource)]
 struct DockResource {
     tree: DockState<Panel>,
+    all_hidden: bool,
 }
 
 #[derive(Resource, Default)]
@@ -136,7 +137,10 @@ fn setup_dock(mut commands: Commands) {
         create_default_layout()
     });
     info!("Dock state initialized");
-    commands.insert_resource(DockResource { tree });
+    commands.insert_resource(DockResource { 
+        tree,
+        all_hidden: false,
+    });
     commands.init_resource::<ViewportRect>();
 }
 
@@ -152,21 +156,27 @@ fn ui_system(
         egui::TopBottomPanel::top("menu_bar").show(ctx, |ui| {
             egui::MenuBar::new().ui(ui, |ui| {
                 ui.menu_button("Windows", |ui| {
-                    show_windows_menu(ui, &mut dock_resource.tree);
+                    show_windows_menu(ui, &mut dock_resource);
                 });
             });
         });
 
-        // Show dock area in remaining space
-        DockArea::new(&mut dock_resource.tree)
-            .style(Style::from_egui(ctx.style().as_ref()))
-            .show(ctx, &mut TabViewer {
-                viewport_rect: &mut viewport_rect
-            });
+        // Show dock area in remaining space (only if not hidden)
+        if !dock_resource.all_hidden {
+            DockArea::new(&mut dock_resource.tree)
+                .style(Style::from_egui(ctx.style().as_ref()))
+                .show_leaf_collapse_buttons(false)
+                .show(ctx, &mut TabViewer {
+                    viewport_rect: &mut viewport_rect
+                });
+        } else {
+            // When hidden, set viewport to entire available screen area
+            viewport_rect.rect = Some(ctx.available_rect());
+        }
     }
 }
 
-fn show_windows_menu(ui: &mut egui::Ui, tree: &mut DockState<Panel>) {
+fn show_windows_menu(ui: &mut egui::Ui, dock_resource: &mut DockResource) {
     // List of dynamic windows that can be toggled
     let dynamic_windows = [
         Panel::Inspector,
@@ -176,16 +186,29 @@ fn show_windows_menu(ui: &mut egui::Ui, tree: &mut DockState<Panel>) {
     ];
 
     for panel in &dynamic_windows {
-        let is_open = is_panel_open(tree, panel);
+        let is_open = is_panel_open(&dock_resource.tree, panel);
 
         if ui.selectable_label(is_open, format!("{}", panel)).clicked() {
             if is_open {
-                close_panel(tree, panel);
+                close_panel(&mut dock_resource.tree, panel);
             } else {
-                open_panel(tree, panel);
+                open_panel(&mut dock_resource.tree, panel);
             }
             ui.close();
         }
+    }
+
+    ui.separator();
+
+    let hide_all_label = if dock_resource.all_hidden {
+        "Show All"
+    } else {
+        "Hide All"
+    };
+
+    if ui.button(hide_all_label).clicked() {
+        dock_resource.all_hidden = !dock_resource.all_hidden;
+        ui.close();
     }
 }
 
@@ -319,9 +342,9 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
     }
 
     fn min_fraction(&self, tab: &Self::Tab) -> Option<f32> {
-        // Bottom panel should have a very small minimum height (about 32px on a 720p window)
+        // Bottom, left, and right panels should have the same minimum size (about 32px on a 720p window)
         match tab {
-            Panel::BottomPanel => Some(0.045),
+            Panel::BottomPanel | Panel::LeftPanel | Panel::RightPanel => Some(0.045),
             _ => None,
         }
     }
