@@ -1,0 +1,193 @@
+(
+    surfaces: [
+        Main((
+            nodes: [
+                Horizontal((
+                    rect: (
+                        min: (
+                            x: 0.0,
+                            y: 22.0,
+                        ),
+                        max: (
+                            x: 1965.7188,
+                            y: 752.0,
+                        ),
+                    ),
+                    fraction: 0.09195149,
+                    fully_collapsed: false,
+                    collapsed_leaf_count: 0,
+                )),
+                Leaf((
+                    rect: (
+                        min: (
+                            x: 0.0,
+                            y: 22.0,
+                        ),
+                        max: (
+                            x: 180.57143,
+                            y: 752.0,
+                        ),
+                    ),
+                    viewport: (
+                        min: (
+                            x: 0.0,
+                            y: 22.0,
+                        ),
+                        max: (
+                            x: 180.5625,
+                            y: 752.0,
+                        ),
+                    ),
+                    tabs: [
+                        LeftPanel,
+                    ],
+                    active: (0),
+                    scroll: 0.0,
+                    collapsed: false,
+                )),
+                Horizontal((
+                    rect: (
+                        min: (
+                            x: 181.14285,
+                            y: 22.0,
+                        ),
+                        max: (
+                            x: 1965.7188,
+                            y: 752.0,
+                        ),
+                    ),
+                    fraction: 0.8415675,
+                    fully_collapsed: false,
+                    collapsed_leaf_count: 0,
+                )),
+                Empty,
+                Empty,
+                Vertical((
+                    rect: (
+                        min: (
+                            x: 181.14285,
+                            y: 22.0,
+                        ),
+                        max: (
+                            x: 1682.8572,
+                            y: 752.0,
+                        ),
+                    ),
+                    fraction: 0.8728083,
+                    fully_collapsed: false,
+                    collapsed_leaf_count: 0,
+                )),
+                Leaf((
+                    rect: (
+                        min: (
+                            x: 1684.0,
+                            y: 22.0,
+                        ),
+                        max: (
+                            x: 1965.7188,
+                            y: 752.0,
+                        ),
+                    ),
+                    viewport: (
+                        min: (
+                            x: 1684.0,
+                            y: 22.0,
+                        ),
+                        max: (
+                            x: 1965.7188,
+                            y: 752.0,
+                        ),
+                    ),
+                    tabs: [
+                        RightPanel,
+                    ],
+                    active: (0),
+                    scroll: 0.0,
+                    collapsed: false,
+                )),
+                Empty,
+                Empty,
+                Empty,
+                Empty,
+                Leaf((
+                    rect: (
+                        min: (
+                            x: 181.14285,
+                            y: 22.0,
+                        ),
+                        max: (
+                            x: 1682.8572,
+                            y: 658.8571,
+                        ),
+                    ),
+                    viewport: (
+                        min: (
+                            x: 181.15625,
+                            y: 22.0,
+                        ),
+                        max: (
+                            x: 1682.875,
+                            y: 658.84375,
+                        ),
+                    ),
+                    tabs: [
+                        Viewport,
+                    ],
+                    active: (0),
+                    scroll: 0.0,
+                    collapsed: false,
+                )),
+                Leaf((
+                    rect: (
+                        min: (
+                            x: 181.14285,
+                            y: 659.4286,
+                        ),
+                        max: (
+                            x: 1682.8572,
+                            y: 752.0,
+                        ),
+                    ),
+                    viewport: (
+                        min: (
+                            x: 181.15625,
+                            y: 659.4375,
+                        ),
+                        max: (
+                            x: 1682.875,
+                            y: 752.0,
+                        ),
+                    ),
+                    tabs: [
+                        BottomPanel,
+                    ],
+                    active: (0),
+                    scroll: 0.0,
+                    collapsed: false,
+                )),
+            ],
+            focused_node: Some((12)),
+            collapsed: false,
+            collapsed_leaf_count: 0,
+        )),
+    ],
+    focused_surface: Some((0)),
+    translations: (
+        tab_context_menu: (
+            close_button: "Close",
+            eject_button: "Eject",
+        ),
+        leaf: (
+            close_button_disabled_tooltip: "This leaf contains non-closable tabs.",
+            close_all_button: "Close window",
+            close_all_button_menu_hint: "Right click to close this window.",
+            close_all_button_modifier_hint: "Press modifier keys (Shift by default) to close this window.",
+            close_all_button_modifier_menu_hint: "Press modifier keys (Shift by default) or right click to close this window.",
+            close_all_button_disabled_tooltip: "This window contains non-closable tabs.",
+            minimize_button: "Minimize window",
+            minimize_button_menu_hint: "Right click to minimize this window.",
+            minimize_button_modifier_hint: "Press modifier keys (Shift by default) to minimize this window.",
+            minimize_button_modifier_menu_hint: "Press modifier keys (Shift by default) or right click to minimize this window.",
+        ),
+    ),
+)
