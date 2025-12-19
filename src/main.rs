@@ -1,5 +1,6 @@
 mod scene;
 mod drag;
+mod widgets;
 
 use bevy::prelude::*;
 use bevy::window::WindowResolution;
@@ -48,6 +49,7 @@ enum Panel {
     Console,
     Hierarchy,
     Assets,
+    CircleSliders,
 }
 
 impl Panel {
@@ -67,6 +69,7 @@ impl std::fmt::Display for Panel {
             Panel::Console => write!(f, "Console"),
             Panel::Hierarchy => write!(f, "Hierarchy"),
             Panel::Assets => write!(f, "Assets"),
+            Panel::CircleSliders => write!(f, "Circle Sliders"),
         }
     }
 }
@@ -80,6 +83,23 @@ struct DockResource {
 #[derive(Resource, Default)]
 pub struct ViewportRect {
     pub rect: Option<egui::Rect>,
+}
+
+#[derive(Resource)]
+pub struct WidgetDemoState {
+    pub angle1: f32,
+    pub angle2: f32,
+    pub enable_snapping: bool,
+}
+
+impl Default for WidgetDemoState {
+    fn default() -> Self {
+        Self {
+            angle1: 0.0,
+            angle2: 45.0,
+            enable_snapping: true,
+        }
+    }
 }
 
 fn load_dock_state() -> Option<DockState<Panel>> {
@@ -142,6 +162,7 @@ fn setup_dock(mut commands: Commands) {
         all_hidden: false,
     });
     commands.init_resource::<ViewportRect>();
+    commands.init_resource::<WidgetDemoState>();
 }
 
 fn maximize_window(mut windows: Query<&mut Window>) {
@@ -154,6 +175,7 @@ fn ui_system(
     mut contexts: Query<&mut EguiContext>,
     mut dock_resource: ResMut<DockResource>,
     mut viewport_rect: ResMut<ViewportRect>,
+    mut widget_demo_state: ResMut<WidgetDemoState>,
 ) {
     for mut egui_context in contexts.iter_mut() {
         let ctx = egui_context.get_mut();
@@ -176,7 +198,8 @@ fn ui_system(
                 .style(Style::from_egui(ctx.style().as_ref()))
                 .show_leaf_collapse_buttons(false)
                 .show(ctx, &mut TabViewer {
-                    viewport_rect: &mut viewport_rect
+                    viewport_rect: &mut viewport_rect,
+                    widget_demo_state: &mut widget_demo_state,
                 });
         } else {
             // When hidden, set viewport to entire available screen area
@@ -192,6 +215,7 @@ fn show_windows_menu(ui: &mut egui::Ui, dock_resource: &mut DockResource) {
         Panel::Console,
         Panel::Hierarchy,
         Panel::Assets,
+        Panel::CircleSliders,
     ];
 
     for panel in &dynamic_windows {
@@ -265,6 +289,7 @@ fn auto_save_dock_state(
 
 struct TabViewer<'a> {
     viewport_rect: &'a mut ViewportRect,
+    widget_demo_state: &'a mut WidgetDemoState,
 }
 
 impl<'a> egui_dock::TabViewer for TabViewer<'a> {
@@ -290,21 +315,18 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                 // No content - empty placeholder
             }
             Panel::Inspector => {
-                ui.heading("Inspector");
                 ui.separator();
                 ui.label("Object properties and settings");
                 ui.add_space(10.0);
                 ui.label("Selected: None");
             }
             Panel::Console => {
-                ui.heading("Console");
                 ui.separator();
                 ui.label("Application logs and messages");
                 ui.add_space(10.0);
                 ui.monospace("[INFO] Application started");
             }
             Panel::Hierarchy => {
-                ui.heading("Hierarchy");
                 ui.separator();
                 ui.label("Scene object tree");
                 ui.add_space(10.0);
@@ -312,13 +334,91 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                 ui.label("  └─ � Ent;ity");
             }
             Panel::Assets => {
-                ui.heading("Assets");
                 ui.separator();
                 ui.label("Project assets and resources");
                 ui.add_space(10.0);
                 ui.label("📂 Textures");
                 ui.label("📂 Models");
                 ui.label("📂 Scripts");
+            }
+            Panel::CircleSliders => {
+                ui.checkbox(&mut self.widget_demo_state.enable_snapping, "Enable Snapping (11.25°)");
+                ui.add_space(10.0);
+                
+                // Calculate available space and size for two sliders
+                let available_width = ui.available_width();
+                let spacing = 10.0;
+                let right_margin = 10.0;
+                let min_radius = 30.0;
+                let max_radius = 80.0;
+                
+                // Calculate if we can fit two sliders side by side
+                let min_width_for_two = (min_radius * 2.0 + 20.0) * 2.0 + spacing + right_margin;
+                let side_by_side = available_width >= min_width_for_two;
+                
+                if side_by_side {
+                    // Side by side layout
+                    let slider_width = (available_width - spacing - right_margin) / 2.0;
+                    let radius = (slider_width / 2.0 - 10.0).min(max_radius).max(min_radius);
+                    
+                    ui.horizontal(|ui| {
+                        ui.vertical(|ui| {
+                            ui.label("Angle 1:");
+                            widgets::circular_slider_float(
+                                ui,
+                                &mut self.widget_demo_state.angle1,
+                                -180.0,
+                                180.0,
+                                radius,
+                                self.widget_demo_state.enable_snapping,
+                            );
+                        });
+                        
+                        ui.add_space(spacing);
+                        
+                        ui.vertical(|ui| {
+                            ui.label("Angle 2:");
+                            widgets::circular_slider_float(
+                                ui,
+                                &mut self.widget_demo_state.angle2,
+                                -180.0,
+                                180.0,
+                                radius,
+                                self.widget_demo_state.enable_snapping,
+                            );
+                        });
+                        
+                        ui.add_space(right_margin);
+                    });
+                } else {
+                    // Vertical stacked layout
+                    let slider_width = available_width - right_margin;
+                    let radius = (slider_width / 2.0 - 10.0).min(max_radius).max(min_radius);
+                    
+                    ui.vertical(|ui| {
+                        ui.label("Angle 1:");
+                        widgets::circular_slider_float(
+                            ui,
+                            &mut self.widget_demo_state.angle1,
+                            -180.0,
+                            180.0,
+                            radius,
+                            self.widget_demo_state.enable_snapping,
+                        );
+                        
+                        ui.add_space(spacing);
+                        
+                        ui.label("Angle 2:");
+                        widgets::circular_slider_float(
+                            ui,
+                            &mut self.widget_demo_state.angle2,
+                            -180.0,
+                            180.0,
+                            radius,
+                            self.widget_demo_state.enable_snapping,
+                        );
+                    });
+                }
             }
         }
     }
