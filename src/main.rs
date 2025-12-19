@@ -1,3 +1,6 @@
+mod scene;
+mod drag;
+
 use bevy::prelude::*;
 use bevy::window::WindowResolution;
 use bevy_egui::{egui, EguiContext, EguiPlugin, EguiPrimaryContextPass};
@@ -7,6 +10,9 @@ use std::fs;
 use std::path::Path;
 use std::time::Duration;
 
+use scene::ScenePlugin;
+use drag::DragPlugin;
+
 const DOCK_STATE_FILE: &str = "dock_state.ron";
 
 fn main() {
@@ -15,11 +21,14 @@ fn main() {
             primary_window: Some(Window {
                 title: "Bevy Egui Dock".to_string(),
                 resolution: WindowResolution::new(1280, 720),
+                present_mode: bevy::window::PresentMode::AutoNoVsync,
                 ..default()
             }),
             ..default()
         }))
         .add_plugins(EguiPlugin::default())
+        .add_plugins(ScenePlugin)
+        .add_plugins(DragPlugin)
         .add_systems(Startup, setup_dock)
         .add_systems(EguiPrimaryContextPass, ui_system)
         .add_systems(Update, auto_save_dock_state)
@@ -65,6 +74,11 @@ impl std::fmt::Display for Panel {
 #[derive(Resource)]
 struct DockResource {
     tree: DockState<Panel>,
+}
+
+#[derive(Resource, Default)]
+pub struct ViewportRect {
+    pub rect: Option<egui::Rect>,
 }
 
 fn load_dock_state() -> Option<DockState<Panel>> {
@@ -123,11 +137,13 @@ fn setup_dock(mut commands: Commands) {
     });
     info!("Dock state initialized");
     commands.insert_resource(DockResource { tree });
+    commands.init_resource::<ViewportRect>();
 }
 
 fn ui_system(
     mut contexts: Query<&mut EguiContext>,
     mut dock_resource: ResMut<DockResource>,
+    mut viewport_rect: ResMut<ViewportRect>,
 ) {
     for mut egui_context in contexts.iter_mut() {
         let ctx = egui_context.get_mut();
@@ -144,7 +160,9 @@ fn ui_system(
         // Show dock area in remaining space
         DockArea::new(&mut dock_resource.tree)
             .style(Style::from_egui(ctx.style().as_ref()))
-            .show(ctx, &mut TabViewer {});
+            .show(ctx, &mut TabViewer {
+                viewport_rect: &mut viewport_rect
+            });
     }
 }
 
@@ -213,9 +231,11 @@ fn auto_save_dock_state(
     }
 }
 
-struct TabViewer {}
+struct TabViewer<'a> {
+    viewport_rect: &'a mut ViewportRect,
+}
 
-impl egui_dock::TabViewer for TabViewer {
+impl<'a> egui_dock::TabViewer for TabViewer<'a> {
     type Tab = Panel;
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
@@ -224,8 +244,13 @@ impl egui_dock::TabViewer for TabViewer {
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
         match tab {
-            // Placeholder panels are completely empty
-            Panel::LeftPanel | Panel::RightPanel | Panel::BottomPanel | Panel::Viewport => {
+            Panel::Viewport => {
+                // Capture the viewport rect for mouse interaction
+                self.viewport_rect.rect = Some(ui.max_rect());
+                // Don't draw anything - let the 3D scene show through
+            }
+            // Other placeholder panels are completely empty
+            Panel::LeftPanel | Panel::RightPanel | Panel::BottomPanel => {
                 // No content - empty placeholder
             }
             Panel::Inspector => {
@@ -263,7 +288,14 @@ impl egui_dock::TabViewer for TabViewer {
     }
 
     fn is_viewport(&self, _tab: &Self::Tab) -> bool {
-        matches!(_tab, Panel::Viewport)
+        // Don't use built-in viewport mode
+        false
+    }
+
+    fn clear_background(&self, tab: &Self::Tab) -> bool {
+        // Return false for viewport to skip drawing background (make it transparent)
+        // Return true for other panels to draw the background
+        !matches!(tab, Panel::Viewport)
     }
 
     fn is_draggable(&self, _tab: &Self::Tab) -> bool {
