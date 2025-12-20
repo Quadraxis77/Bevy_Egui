@@ -26,6 +26,7 @@ pub enum Panel {
     NameTypeEditor,
     AdhesionSettings,
     ParentSettings,
+    TimeSlider,
 }
 
 impl Panel {
@@ -45,12 +46,13 @@ impl std::fmt::Display for Panel {
             Panel::Console => write!(f, "Console"),
             Panel::Hierarchy => write!(f, "Hierarchy"),
             Panel::Assets => write!(f, "Assets"),
-            Panel::CircleSliders => write!(f, "Circle Sliders"),
-            Panel::QuaternionBall => write!(f, "Quaternion Ball"),
+            Panel::CircleSliders => write!(f, "Parent Split Angle"),
+            Panel::QuaternionBall => write!(f, "Child Settings"),
             Panel::Modes => write!(f, "Modes"),
-            Panel::NameTypeEditor => write!(f, "Name/Type Editor"),
+            Panel::NameTypeEditor => write!(f, "Genome Editor"),
             Panel::AdhesionSettings => write!(f, "Adhesion Settings"),
             Panel::ParentSettings => write!(f, "Parent Settings"),
+            Panel::TimeSlider => write!(f, "Time Slider"),
         }
     }
 }
@@ -203,6 +205,7 @@ pub fn show_windows_menu(ui: &mut bevy_egui::egui::Ui, dock_resource: &mut DockR
         Panel::NameTypeEditor,
         Panel::AdhesionSettings,
         Panel::ParentSettings,
+        Panel::TimeSlider,
     ];
 
     for panel in &dynamic_windows {
