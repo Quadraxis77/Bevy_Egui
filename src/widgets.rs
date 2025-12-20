@@ -615,6 +615,7 @@ fn snap_quaternion_to_grid(q: Quat, grid_angle_deg: f32) -> Quat {
 pub fn range_slider(
     ui: &mut Ui,
     label: &str,
+    id: &str,
     min_val: &mut f32,
     max_val: &mut f32,
     range_min: f32,
@@ -642,25 +643,32 @@ pub fn range_slider(
         std::mem::swap(min_val, max_val);
         changed = true;
     }
+    
+    // Display label with current values
+    let range_text = if (*max_val - *min_val).abs() < 0.01 {
+        format!("{}: {:.1}", label, min_val)
+    } else {
+        format!("{}: {:.1} ~ {:.1}", label, min_val, max_val)
+    };
+    ui.label(range_text);
 
     let available_width = ui.available_width();
-    let slider_width = (available_width - 40.0).max(100.0);
-    let value_label_height = 20.0;
-    let slider_height = 20.0;
-    let center_slider_height = 16.0;
-    let vertical_gap = 8.0;
-    let line_gap = 4.0;
+    let slider_width = (available_width - 20.0).max(100.0);
+    let slider_height = 16.0;
+    let center_slider_height = 12.0;
+    let vertical_gap = 2.0;
+    let line_gap = 1.0;
     
-    let total_height = value_label_height + slider_height + vertical_gap + line_gap * 2.0 + center_slider_height + 4.0;
+    let total_height = slider_height + vertical_gap + line_gap * 2.0 + center_slider_height + 4.0;
     
     let (rect, _) = ui.allocate_exact_size(
         EguiVec2::new(available_width, total_height),
         Sense::hover(),
     );
     
-    let id = ui.make_persistent_id(label);
+    let widget_id = ui.make_persistent_id(id);
     let painter = ui.painter();
-    let left_margin = 20.0;
+    let left_margin = 10.0;
     let slider_left = rect.left() + left_margin;
     let slider_right = slider_left + slider_width;
     
@@ -682,7 +690,6 @@ pub fn range_slider(
     let col_frame = ui.visuals().widgets.inactive.bg_fill;
     let col_grab = ui.visuals().selection.bg_fill;
     let col_grab_active = ui.visuals().widgets.hovered.bg_fill;
-    let col_text = ui.visuals().text_color();
     let col_line = egui::Color32::from_rgba_unmultiplied(
         col_grab.r(),
         col_grab.g(),
@@ -691,9 +698,8 @@ pub fn range_slider(
     );
     
     // Top row positions
-    let labels_y = rect.top();
-    let top_y = labels_y + value_label_height;
-    let grab_width = 12.0;
+    let top_y = rect.top();
+    let grab_width = 8.0;
     let grab_half = grab_width / 2.0;
     
     // Offset handles when close together
@@ -707,40 +713,18 @@ pub fn range_slider(
         (min_x_base, max_x_base)
     };
     
-    // Draw value labels
-    let min_text = format!("{:.1}", min_val);
-    let max_text = format!("{:.1}", max_val);
-    
-    painter.text(
-        Pos2::new(min_x, labels_y + 10.0),
-        egui::Align2::CENTER_CENTER,
-        &min_text,
-        egui::FontId::default(),
-        col_text,
-    );
-    
-    if (*max_val - *min_val).abs() >= 0.01 {
-        painter.text(
-            Pos2::new(max_x, labels_y + 10.0),
-            egui::Align2::CENTER_CENTER,
-            &max_text,
-            egui::FontId::default(),
-            col_text,
-        );
-    }
-    
     // Draw track
     let track_y = top_y + slider_height / 2.0;
     painter.line_segment(
         [Pos2::new(slider_left, track_y), Pos2::new(slider_right, track_y)],
-        Stroke::new(4.0, col_frame),
+        Stroke::new(3.0, col_frame),
     );
     
     // Draw highlighted range
     if (max_x_base - min_x_base).abs() > 1.0 {
         painter.line_segment(
             [Pos2::new(min_x_base, track_y), Pos2::new(max_x_base, track_y)],
-            Stroke::new(4.0, col_grab),
+            Stroke::new(3.0, col_grab),
         );
     }
     
@@ -798,7 +782,7 @@ pub fn range_slider(
     );
     
     // Draw center grab (diamond)
-    let diamond_size = center_slider_height / 2.0 - 2.0;
+    let diamond_size = center_slider_height / 2.0 - 1.0;
     let diamond_center = Pos2::new(center_x, center_y + center_slider_height / 2.0);
     let center_grab_rect = egui::Rect::from_center_size(
         diamond_center,
@@ -825,7 +809,7 @@ pub fn range_slider(
         EguiVec2::new(slider_width + grab_width, slider_height),
     );
     
-    let top_response = ui.interact(top_interact_rect, id.with("top"), Sense::click_and_drag());
+    let top_response = ui.interact(top_interact_rect, widget_id.with("top"), Sense::click_and_drag());
     
     // Center slider interaction area
     let center_interact_rect = egui::Rect::from_min_size(
@@ -833,13 +817,13 @@ pub fn range_slider(
         EguiVec2::new(slider_width + grab_width, center_slider_height),
     );
     
-    let center_response = ui.interact(center_interact_rect, id.with("center"), Sense::click_and_drag());
+    let center_response = ui.interact(center_interact_rect, widget_id.with("center"), Sense::click_and_drag());
     
     // Handle top slider dragging
     DRAG_STATE.with(|state| {
         let mut state = state.borrow_mut();
         let (dragging_center, drag_target, drag_start_min, drag_start_max) = 
-            state.entry(id).or_insert((false, DragTarget::None, 0.0, 0.0));
+            state.entry(widget_id).or_insert((false, DragTarget::None, 0.0, 0.0));
         
         if top_response.dragged() && !*dragging_center {
             if top_response.drag_started() || *drag_target == DragTarget::None {
@@ -912,4 +896,311 @@ pub fn range_slider(
     });
     
     changed
+}
+
+/// Modes list widget - displays a list of modes with colored buttons and radio buttons for selection
+/// Returns (selection_changed, initial_changed, add_clicked, remove_clicked, copy_clicked, copy_into_clicked, rename_index, color_change)
+pub fn modes_list(
+    ui: &mut Ui,
+    modes: &[(String, egui::Color32)], // (name, color) pairs
+    selected_index: &mut usize,
+    initial_mode: &mut usize,
+    _width: f32,
+    copy_into_mode: bool,
+    color_picker_state: &mut Option<(usize, egui::ecolor::Hsva)>,
+) -> (bool, bool, bool, bool, bool, bool, Option<usize>, Option<(usize, egui::Color32)>) {
+    let mut selection_changed = false;
+    let mut initial_changed = false;
+    let mut add_clicked = false;
+    let mut remove_clicked = false;
+    let mut copy_clicked = false;
+    let mut copy_into_clicked = false;
+    let mut rename_index = None;
+    let mut color_picker_index: Option<(usize, egui::Color32)> = None;
+    
+    // Add/Remove/Copy buttons at the top
+    ui.horizontal(|ui| {
+        let button_size = egui::vec2(20.0, 20.0);
+        
+        if ui.add_sized(button_size, egui::Button::new("+")).clicked() {
+            add_clicked = true;
+        }
+        
+        let can_remove = modes.len() > 1 && *selected_index != *initial_mode;
+        let remove_button = ui.add_enabled_ui(can_remove, |ui| {
+            ui.add_sized(button_size, egui::Button::new("-"))
+        }).inner;
+        
+        if remove_button.clicked() {
+            remove_clicked = true;
+        }
+        
+        // Show tooltip if hovering remove button and it's disabled
+        if remove_button.hovered() && !can_remove && *selected_index == *initial_mode {
+            remove_button.on_hover_text("Cannot remove a mode marked as initial");
+        }
+        
+        // Copy button - compact
+        if ui.small_button("Copy").clicked() {
+            copy_clicked = true;
+        }
+    });
+    
+    ui.horizontal(|ui| {
+        // Copy Into button - compact
+        if ui.small_button("Copy Into").clicked() {
+            copy_into_clicked = true;
+        }
+    });
+    
+    ui.separator();
+    
+    // Show instruction text if in copy into mode
+    if copy_into_mode {
+        ui.colored_label(egui::Color32::YELLOW, "Select target mode to copy into:");
+        ui.add_space(5.0);
+    }
+    
+    for (i, (name, color)) in modes.iter().enumerate() {
+        let is_selected = i == *selected_index;
+        let is_initial = i == *initial_mode;
+        
+        // Determine button colors based on selection
+        let button_color = if is_selected {
+            *color
+        } else {
+            egui::Color32::from_rgb(
+                (color.r() as f32 * 0.8) as u8,
+                (color.g() as f32 * 0.8) as u8,
+                (color.b() as f32 * 0.8) as u8,
+            )
+        };
+        
+        let button_hovered = egui::Color32::from_rgb(
+            (color.r() as f32 * 0.9) as u8,
+            (color.g() as f32 * 0.9) as u8,
+            (color.b() as f32 * 0.9) as u8,
+        );
+        
+        // Determine text color based on brightness
+        let brightness = color.r() as f32 * 0.299 + color.g() as f32 * 0.587 + color.b() as f32 * 0.114;
+        let text_color = if brightness > 127.5 {
+            egui::Color32::BLACK
+        } else {
+            egui::Color32::WHITE
+        };
+        
+        ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing.x = 4.0; // Reduce spacing between radio and button
+            
+            // Radio button for initial mode selection (only if not in copy into mode)
+            if !copy_into_mode {
+                let radio_response = ui.radio(is_initial, "");
+                if radio_response.clicked() {
+                    *initial_mode = i;
+                    initial_changed = true;
+                }
+                radio_response.on_hover_text("Make this mode initial");
+            }
+            
+            // Mode button with custom styling - use remaining width
+            let button_width = ui.available_width();
+            let button_height = ui.spacing().interact_size.y; // Match standard widget height
+            
+            let button = egui::Button::new(egui::RichText::new(name).color(text_color))
+                .fill(button_color)
+                .wrap_mode(egui::TextWrapMode::Truncate); // Allow text to truncate instead of forcing width
+            
+            let button_response = ui.add_sized(egui::vec2(button_width, button_height), button);
+            
+            if button_response.hovered() {
+                // Draw hover effect manually
+                let rect = button_response.rect;
+                ui.painter().rect_filled(rect, 3.0, button_hovered);
+                ui.painter().text(
+                    rect.center(),
+                    egui::Align2::CENTER_CENTER,
+                    name,
+                    egui::FontId::default(),
+                    text_color,
+                );
+            }
+            
+            if button_response.clicked() {
+                *selected_index = i;
+                selection_changed = true;
+            }
+            
+            // Double-click to rename (only if not in copy into mode)
+            if !copy_into_mode && button_response.double_clicked() {
+                rename_index = Some(i);
+            }
+            
+            // Right-click to change color (only if not in copy into mode)
+            if !copy_into_mode {
+                let mut should_close = false;
+                let mut confirmed_color = None;
+                
+                button_response.context_menu(|ui| {
+                    // Check if we're already editing this mode's color
+                    let is_editing = color_picker_state.as_ref().map(|(idx, _)| *idx == i).unwrap_or(false);
+                    
+                    if !is_editing {
+                        // Start editing - initialize the color picker state
+                        let hsva = egui::ecolor::Hsva::from(egui::Rgba::from(*color));
+                        *color_picker_state = Some((i, hsva));
+                    }
+                    
+                    if let Some((_, hsva)) = color_picker_state.as_mut() {
+                        // Show the color picker
+                        egui::color_picker::color_picker_hsva_2d(ui, hsva, egui::color_picker::Alpha::Opaque);
+                        
+                        ui.add_space(5.0);
+                        
+                        // OK and Cancel buttons
+                        ui.horizontal(|ui| {
+                            if ui.button("OK").clicked() {
+                                let rgba = egui::Rgba::from(*hsva);
+                                let new_color = egui::Color32::from(rgba);
+                                confirmed_color = Some(new_color);
+                                should_close = true;
+                            }
+                            if ui.button("Cancel").clicked() {
+                                should_close = true;
+                            }
+                        });
+                    }
+                });
+                
+                if should_close {
+                    *color_picker_state = None;
+                }
+                
+                if let Some(new_color) = confirmed_color {
+                    color_picker_index = Some((i, new_color));
+                }
+            }
+            
+            // Draw dashed outline for selected mode
+            if is_selected {
+                let rect = button_response.rect;
+                let painter = ui.painter();
+                
+                let dash_length: f32 = 6.0;
+                let black = egui::Color32::BLACK;
+                let white = egui::Color32::WHITE;
+                
+                // Helper to draw dashed line
+                let draw_dashed_line = |start: Pos2, end: Pos2, is_horizontal: bool| {
+                    let length: f32 = if is_horizontal {
+                        end.x - start.x
+                    } else {
+                        end.y - start.y
+                    };
+                    
+                    let mut offset: f32 = 0.0;
+                    let mut use_black = true;
+                    
+                    while offset < length {
+                        let segment_length: f32 = dash_length.min(length - offset);
+                        let color = if use_black { black } else { white };
+                        
+                        let seg_start = if is_horizontal {
+                            Pos2::new(start.x + offset, start.y)
+                        } else {
+                            Pos2::new(start.x, start.y + offset)
+                        };
+                        
+                        let seg_end = if is_horizontal {
+                            Pos2::new(start.x + offset + segment_length, start.y)
+                        } else {
+                            Pos2::new(start.x, start.y + offset + segment_length)
+                        };
+                        
+                        painter.line_segment(
+                            [seg_start, seg_end],
+                            Stroke::new(2.0, color),
+                        );
+                        
+                        offset += dash_length;
+                        use_black = !use_black;
+                    }
+                };
+                
+                // Draw all four edges
+                draw_dashed_line(rect.left_top(), rect.right_top(), true);      // Top
+                draw_dashed_line(rect.left_bottom(), rect.right_bottom(), true); // Bottom
+                draw_dashed_line(rect.left_top(), rect.left_bottom(), false);    // Left
+                draw_dashed_line(rect.right_top(), rect.right_bottom(), false);  // Right
+            }
+        });
+    }
+    
+    (selection_changed, initial_changed, add_clicked, remove_clicked, copy_clicked, copy_into_clicked, rename_index, color_picker_index)
+}
+
+/// Generate the next available mode name based on a base name
+/// Uses hierarchical dot notation for modes inserted between existing modes
+pub fn generate_next_mode_name(base_name: &str, existing_names: &[String]) -> String {
+    // Helper to check if a name is already used
+    let is_name_taken = |candidate: &str| {
+        existing_names.iter().any(|name| name == candidate)
+    };
+    
+    // Extract the number part from the name (everything after "M ")
+    let number_part = if let Some(num_str) = base_name.strip_prefix("M ") {
+        num_str
+    } else {
+        // Fallback if name doesn't start with "M "
+        return format!("M {}", existing_names.len());
+    };
+    
+    // Check if the base name has dots (hierarchical notation)
+    if number_part.contains('.') {
+        // Hierarchical mode (e.g., "M 1.1" or "M 1.1.1")
+        let parts: Vec<&str> = number_part.split('.').collect();
+        if let Some(last_num_str) = parts.last() {
+            if let Ok(last_num) = last_num_str.parse::<i32>() {
+                // Try incrementing the last number (e.g., "M 1.1" -> "M 1.2")
+                let prefix = &parts[..parts.len() - 1].join(".");
+                let next_sibling_name = if prefix.is_empty() {
+                    format!("M {}", last_num + 1)
+                } else {
+                    format!("M {}.{}", prefix, last_num + 1)
+                };
+                
+                if !is_name_taken(&next_sibling_name) {
+                    return next_sibling_name;
+                }
+            }
+        }
+        
+        // If incrementing at the same level is taken, add a sub-level
+        for i in 1..100 {
+            let candidate_name = format!("M {}.{}", number_part, i);
+            if !is_name_taken(&candidate_name) {
+                return candidate_name;
+            }
+        }
+    } else {
+        // Simple mode (e.g., "M 1")
+        if let Ok(base_number) = number_part.parse::<i32>() {
+            // Try the next integer first (e.g., "M 1" -> "M 2")
+            let next_int_name = format!("M {}", base_number + 1);
+            if !is_name_taken(&next_int_name) {
+                return next_int_name;
+            }
+            
+            // If that's taken, add hierarchical level (e.g., "M 1.1", "M 1.2", etc.)
+            for i in 1..100 {
+                let candidate_name = format!("M {}.{}", base_number, i);
+                if !is_name_taken(&candidate_name) {
+                    return candidate_name;
+                }
+            }
+        }
+    }
+    
+    // Fallback: use total mode count
+    format!("M {}", existing_names.len())
 }

@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
-use bevy_egui::{egui, EguiContext};
+use bevy_egui::EguiContext;
 use crate::scene::DraggableSphere;
-use crate::ViewportRect;
+use crate::ui::ViewportRect;
 
 #[derive(Resource, Default)]
 struct DragState {
