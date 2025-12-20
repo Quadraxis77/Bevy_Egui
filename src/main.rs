@@ -50,6 +50,7 @@ enum Panel {
     Hierarchy,
     Assets,
     CircleSliders,
+    QuaternionBall,
 }
 
 impl Panel {
@@ -70,6 +71,7 @@ impl std::fmt::Display for Panel {
             Panel::Hierarchy => write!(f, "Hierarchy"),
             Panel::Assets => write!(f, "Assets"),
             Panel::CircleSliders => write!(f, "Circle Sliders"),
+            Panel::QuaternionBall => write!(f, "Quaternion Ball"),
         }
     }
 }
@@ -90,6 +92,17 @@ pub struct WidgetDemoState {
     pub angle1: f32,
     pub angle2: f32,
     pub enable_snapping: bool,
+    pub orientation: Quat,
+    pub qball_snapping: bool,
+    pub qball_locked_axis: i32,
+    pub qball_initial_distance: f32,
+    // Direct lat/lon coordinates for each axis endpoint
+    pub x_axis_lat: f32,
+    pub x_axis_lon: f32,
+    pub y_axis_lat: f32,
+    pub y_axis_lon: f32,
+    pub z_axis_lat: f32,
+    pub z_axis_lon: f32,
 }
 
 impl Default for WidgetDemoState {
@@ -98,6 +111,17 @@ impl Default for WidgetDemoState {
             angle1: 0.0,
             angle2: 45.0,
             enable_snapping: true,
+            orientation: Quat::IDENTITY,
+            qball_snapping: true,
+            qball_locked_axis: -1,
+            qball_initial_distance: 0.0,
+            // All axes start at their own (0, 0) coordinates
+            x_axis_lat: 0.0,
+            x_axis_lon: 0.0,
+            y_axis_lat: 0.0,
+            y_axis_lon: 0.0,
+            z_axis_lat: 0.0,
+            z_axis_lon: 0.0,
         }
     }
 }
@@ -216,6 +240,7 @@ fn show_windows_menu(ui: &mut egui::Ui, dock_resource: &mut DockResource) {
         Panel::Hierarchy,
         Panel::Assets,
         Panel::CircleSliders,
+        Panel::QuaternionBall,
     ];
 
     for panel in &dynamic_windows {
@@ -419,6 +444,43 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                         );
                     });
                 }
+            }
+            Panel::QuaternionBall => {
+                ui.checkbox(&mut self.widget_demo_state.qball_snapping, "Enable Snapping (11.25°)");
+                ui.add_space(10.0);
+                
+                // Center the quaternion ball
+                ui.vertical_centered(|ui| {
+                    widgets::quaternion_ball(
+                        ui,
+                        &mut self.widget_demo_state.orientation,
+                        &mut self.widget_demo_state.x_axis_lat,
+                        &mut self.widget_demo_state.x_axis_lon,
+                        &mut self.widget_demo_state.y_axis_lat,
+                        &mut self.widget_demo_state.y_axis_lon,
+                        &mut self.widget_demo_state.z_axis_lat,
+                        &mut self.widget_demo_state.z_axis_lon,
+                        80.0,
+                        self.widget_demo_state.qball_snapping,
+                        &mut self.widget_demo_state.qball_locked_axis,
+                        &mut self.widget_demo_state.qball_initial_distance,
+                    );
+                });
+                
+                ui.add_space(10.0);
+                
+                // Display relative coordinates for each axis (all start at 0,0)
+                ui.label("Axis relative coordinates (lat, lon):");
+                ui.horizontal(|ui| {
+                    ui.colored_label(egui::Color32::from_rgb(79, 120, 255), 
+                        format!("X: ({:.1}°, {:.1}°)", self.widget_demo_state.x_axis_lat, self.widget_demo_state.x_axis_lon));
+                    ui.label(" ");
+                    ui.colored_label(egui::Color32::from_rgb(79, 255, 79), 
+                        format!("Y: ({:.1}°, {:.1}°)", self.widget_demo_state.y_axis_lat, self.widget_demo_state.y_axis_lon));
+                    ui.label(" ");
+                    ui.colored_label(egui::Color32::from_rgb(255, 79, 79), 
+                        format!("Z: ({:.1}°, {:.1}°)", self.widget_demo_state.z_axis_lat, self.widget_demo_state.z_axis_lon));
+                });
             }
         }
     }
