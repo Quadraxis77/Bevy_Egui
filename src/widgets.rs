@@ -306,7 +306,7 @@ pub fn quaternion_ball(
             painter.line_segment([center, end], Stroke::new(line_thickness, faded_color));
         }
         
-        let circle_radius = (4.0 + alpha * 2.0).clamp(4.0, 6.0);
+        let circle_radius = (4.0 + alpha * 2.0).clamp(4.0, 6.0) * 0.5; // Reduced by 50%
         painter.circle_filled(end, circle_radius, faded_color);
     };
     
@@ -608,4 +608,308 @@ fn snap_quaternion_to_grid(q: Quat, grid_angle_deg: f32) -> Quat {
     let snapped_matrix = Mat3::from_cols(best_x_axis, best_y_axis, best_z_axis);
     
     Quat::from_mat3(&snapped_matrix).normalize()
+}
+
+/// Range slider widget with min/max handles and a center diamond that moves both together
+/// Returns true if either value changed
+pub fn range_slider(
+    ui: &mut Ui,
+    label: &str,
+    min_val: &mut f32,
+    max_val: &mut f32,
+    range_min: f32,
+    range_max: f32,
+) -> bool {
+    use std::cell::RefCell;
+    use std::collections::HashMap;
+    
+    thread_local! {
+        static DRAG_STATE: RefCell<HashMap<egui::Id, (bool, DragTarget, f32, f32)>> = RefCell::new(HashMap::new());
+    }
+    
+    #[derive(Clone, Copy, PartialEq)]
+    enum DragTarget {
+        None,
+        Min,
+        Max,
+        Center,
+    }
+    
+    let mut changed = false;
+    
+    // Ensure min <= max
+    if *min_val > *max_val {
+        std::mem::swap(min_val, max_val);
+        changed = true;
+    }
+
+    let available_width = ui.available_width();
+    let slider_width = (available_width - 40.0).max(100.0);
+    let value_label_height = 20.0;
+    let slider_height = 20.0;
+    let center_slider_height = 16.0;
+    let vertical_gap = 8.0;
+    let line_gap = 4.0;
+    
+    let total_height = value_label_height + slider_height + vertical_gap + line_gap * 2.0 + center_slider_height + 4.0;
+    
+    let (rect, _) = ui.allocate_exact_size(
+        EguiVec2::new(available_width, total_height),
+        Sense::hover(),
+    );
+    
+    let id = ui.make_persistent_id(label);
+    let painter = ui.painter();
+    let left_margin = 20.0;
+    let slider_left = rect.left() + left_margin;
+    let slider_right = slider_left + slider_width;
+    
+    // Helper functions
+    let value_to_x = |v: f32| -> f32 {
+        let t = (v - range_min) / (range_max - range_min);
+        slider_left + t * slider_width
+    };
+    
+    let x_to_value = |x: f32| -> f32 {
+        let t = ((x - slider_left) / slider_width).clamp(0.0, 1.0);
+        range_min + t * (range_max - range_min)
+    };
+    
+    let min_x_base = value_to_x(*min_val);
+    let max_x_base = value_to_x(*max_val);
+    
+    // Colors
+    let col_frame = ui.visuals().widgets.inactive.bg_fill;
+    let col_grab = ui.visuals().selection.bg_fill;
+    let col_grab_active = ui.visuals().widgets.hovered.bg_fill;
+    let col_text = ui.visuals().text_color();
+    let col_line = egui::Color32::from_rgba_unmultiplied(
+        col_grab.r(),
+        col_grab.g(),
+        col_grab.b(),
+        153,
+    );
+    
+    // Top row positions
+    let labels_y = rect.top();
+    let top_y = labels_y + value_label_height;
+    let grab_width = 12.0;
+    let grab_half = grab_width / 2.0;
+    
+    // Offset handles when close together
+    let handle_gap = 2.0;
+    let overlap_threshold = grab_width + handle_gap;
+    let (min_x, max_x) = if (max_x_base - min_x_base) < overlap_threshold {
+        let center = (min_x_base + max_x_base) / 2.0;
+        let half_offset = (overlap_threshold / 2.0).min(center - slider_left).min(slider_right - center);
+        (center - half_offset, center + half_offset)
+    } else {
+        (min_x_base, max_x_base)
+    };
+    
+    // Draw value labels
+    let min_text = format!("{:.1}", min_val);
+    let max_text = format!("{:.1}", max_val);
+    
+    painter.text(
+        Pos2::new(min_x, labels_y + 10.0),
+        egui::Align2::CENTER_CENTER,
+        &min_text,
+        egui::FontId::default(),
+        col_text,
+    );
+    
+    if (*max_val - *min_val).abs() >= 0.01 {
+        painter.text(
+            Pos2::new(max_x, labels_y + 10.0),
+            egui::Align2::CENTER_CENTER,
+            &max_text,
+            egui::FontId::default(),
+            col_text,
+        );
+    }
+    
+    // Draw track
+    let track_y = top_y + slider_height / 2.0;
+    painter.line_segment(
+        [Pos2::new(slider_left, track_y), Pos2::new(slider_right, track_y)],
+        Stroke::new(4.0, col_frame),
+    );
+    
+    // Draw highlighted range
+    if (max_x_base - min_x_base).abs() > 1.0 {
+        painter.line_segment(
+            [Pos2::new(min_x_base, track_y), Pos2::new(max_x_base, track_y)],
+            Stroke::new(4.0, col_grab),
+        );
+    }
+    
+    // Center slider position
+    let center_y = top_y + slider_height + vertical_gap + line_gap * 2.0;
+    let center_val = (*min_val + *max_val) / 2.0;
+    let center_x = value_to_x(center_val);
+    
+    // Draw connecting lines
+    let line_start_y = top_y + slider_height;
+    let line_end_y = center_y;
+    
+    painter.line_segment(
+        [Pos2::new(min_x, line_start_y), Pos2::new(center_x, line_end_y)],
+        Stroke::new(2.0, col_line),
+    );
+    
+    painter.line_segment(
+        [Pos2::new(max_x, line_start_y), Pos2::new(center_x, line_end_y)],
+        Stroke::new(2.0, col_line),
+    );
+    
+    // Draw center slider track
+    let center_track_y = center_y + center_slider_height / 2.0;
+    painter.line_segment(
+        [Pos2::new(slider_left, center_track_y), Pos2::new(slider_right, center_track_y)],
+        Stroke::new(3.0, col_frame),
+    );
+    
+    // Check mouse interaction
+    let mouse_pos = ui.input(|i| i.pointer.hover_pos()).unwrap_or(Pos2::ZERO);
+    
+    // Draw min grab
+    let min_grab_rect = egui::Rect::from_min_max(
+        Pos2::new(min_x - grab_half, top_y + 2.0),
+        Pos2::new(min_x + grab_half, top_y + slider_height - 2.0),
+    );
+    let hovering_min = min_grab_rect.contains(mouse_pos);
+    painter.rect_filled(
+        min_grab_rect,
+        3.0,
+        if hovering_min { col_grab_active } else { col_grab },
+    );
+    
+    // Draw max grab
+    let max_grab_rect = egui::Rect::from_min_max(
+        Pos2::new(max_x - grab_half, top_y + 2.0),
+        Pos2::new(max_x + grab_half, top_y + slider_height - 2.0),
+    );
+    let hovering_max = max_grab_rect.contains(mouse_pos);
+    painter.rect_filled(
+        max_grab_rect,
+        3.0,
+        if hovering_max { col_grab_active } else { col_grab },
+    );
+    
+    // Draw center grab (diamond)
+    let diamond_size = center_slider_height / 2.0 - 2.0;
+    let diamond_center = Pos2::new(center_x, center_y + center_slider_height / 2.0);
+    let center_grab_rect = egui::Rect::from_center_size(
+        diamond_center,
+        EguiVec2::new(diamond_size * 2.0, diamond_size * 2.0),
+    );
+    let hovering_center = center_grab_rect.contains(mouse_pos);
+    
+    let diamond_top = Pos2::new(diamond_center.x, diamond_center.y - diamond_size);
+    let diamond_right = Pos2::new(diamond_center.x + diamond_size, diamond_center.y);
+    let diamond_bottom = Pos2::new(diamond_center.x, diamond_center.y + diamond_size);
+    let diamond_left = Pos2::new(diamond_center.x - diamond_size, diamond_center.y);
+    
+    let center_color = if hovering_center { col_grab_active } else { col_grab };
+    
+    painter.add(egui::Shape::convex_polygon(
+        vec![diamond_top, diamond_right, diamond_bottom, diamond_left],
+        center_color,
+        Stroke::NONE,
+    ));
+    
+    // Top slider interaction area
+    let top_interact_rect = egui::Rect::from_min_size(
+        Pos2::new(slider_left - grab_half, top_y),
+        EguiVec2::new(slider_width + grab_width, slider_height),
+    );
+    
+    let top_response = ui.interact(top_interact_rect, id.with("top"), Sense::click_and_drag());
+    
+    // Center slider interaction area
+    let center_interact_rect = egui::Rect::from_min_size(
+        Pos2::new(slider_left - grab_half, center_y),
+        EguiVec2::new(slider_width + grab_width, center_slider_height),
+    );
+    
+    let center_response = ui.interact(center_interact_rect, id.with("center"), Sense::click_and_drag());
+    
+    // Handle top slider dragging
+    DRAG_STATE.with(|state| {
+        let mut state = state.borrow_mut();
+        let (dragging_center, drag_target, drag_start_min, drag_start_max) = 
+            state.entry(id).or_insert((false, DragTarget::None, 0.0, 0.0));
+        
+        if top_response.dragged() && !*dragging_center {
+            if top_response.drag_started() || *drag_target == DragTarget::None {
+                // Determine which handle to drag
+                let dist_to_min = (mouse_pos.x - min_x).abs();
+                let dist_to_max = (mouse_pos.x - max_x).abs();
+                *drag_target = if dist_to_min <= dist_to_max {
+                    DragTarget::Min
+                } else {
+                    DragTarget::Max
+                };
+            }
+            
+            let new_value = x_to_value(mouse_pos.x);
+            
+            match *drag_target {
+                DragTarget::Min => {
+                    let new_min = new_value.clamp(range_min, *max_val);
+                    if (new_min - *min_val).abs() > 0.001 {
+                        *min_val = new_min;
+                        changed = true;
+                    }
+                }
+                DragTarget::Max => {
+                    let new_max = new_value.clamp(*min_val, range_max);
+                    if (new_max - *max_val).abs() > 0.001 {
+                        *max_val = new_max;
+                        changed = true;
+                    }
+                }
+                _ => {}
+            }
+        } else if !top_response.dragged() {
+            *drag_target = DragTarget::None;
+        }
+        
+        // Handle center slider dragging
+        if center_response.dragged() {
+            if center_response.drag_started() {
+                *dragging_center = true;
+                *drag_start_min = *min_val;
+                *drag_start_max = *max_val;
+            }
+            
+            let drag_delta = center_response.drag_delta();
+            if drag_delta.x.abs() > 0.1 {
+                let value_delta = drag_delta.x / slider_width * (range_max - range_min);
+                let range_size = *max_val - *min_val;
+                
+                let new_min = (*min_val + value_delta).clamp(range_min, range_max - range_size);
+                let new_max = new_min + range_size;
+                
+                if (new_min - *min_val).abs() > 0.001 {
+                    *min_val = new_min;
+                    *max_val = new_max;
+                    changed = true;
+                }
+            }
+        } else {
+            *dragging_center = false;
+        }
+        
+        // Double-click on center diamond to collapse range to single value
+        if center_response.double_clicked() {
+            let center_val = (*min_val + *max_val) / 2.0;
+            *min_val = center_val;
+            *max_val = center_val;
+            changed = true;
+        }
+    });
+    
+    changed
 }

@@ -51,6 +51,7 @@ enum Panel {
     Assets,
     CircleSliders,
     QuaternionBall,
+    RangeSliders,
 }
 
 impl Panel {
@@ -72,6 +73,7 @@ impl std::fmt::Display for Panel {
             Panel::Assets => write!(f, "Assets"),
             Panel::CircleSliders => write!(f, "Circle Sliders"),
             Panel::QuaternionBall => write!(f, "Quaternion Ball"),
+            Panel::RangeSliders => write!(f, "Range Sliders"),
         }
     }
 }
@@ -96,13 +98,30 @@ pub struct WidgetDemoState {
     pub qball_snapping: bool,
     pub qball_locked_axis: i32,
     pub qball_initial_distance: f32,
-    // Direct lat/lon coordinates for each axis endpoint
+    // Direct lat/lon coordinates for each axis endpoint (ball 1)
     pub x_axis_lat: f32,
     pub x_axis_lon: f32,
     pub y_axis_lat: f32,
     pub y_axis_lon: f32,
     pub z_axis_lat: f32,
     pub z_axis_lon: f32,
+    // Second ball state
+    pub orientation2: Quat,
+    pub qball2_locked_axis: i32,
+    pub qball2_initial_distance: f32,
+    pub x_axis_lat2: f32,
+    pub x_axis_lon2: f32,
+    pub y_axis_lat2: f32,
+    pub y_axis_lon2: f32,
+    pub z_axis_lat2: f32,
+    pub z_axis_lon2: f32,
+    // Range slider values
+    pub range1_min: f32,
+    pub range1_max: f32,
+    pub range2_min: f32,
+    pub range2_max: f32,
+    pub range3_min: f32,
+    pub range3_max: f32,
 }
 
 impl Default for WidgetDemoState {
@@ -122,6 +141,23 @@ impl Default for WidgetDemoState {
             y_axis_lon: 0.0,
             z_axis_lat: 0.0,
             z_axis_lon: 0.0,
+            // Second ball
+            orientation2: Quat::IDENTITY,
+            qball2_locked_axis: -1,
+            qball2_initial_distance: 0.0,
+            x_axis_lat2: 0.0,
+            x_axis_lon2: 0.0,
+            y_axis_lat2: 0.0,
+            y_axis_lon2: 0.0,
+            z_axis_lat2: 0.0,
+            z_axis_lon2: 0.0,
+            // Range sliders
+            range1_min: 25.0,
+            range1_max: 75.0,
+            range2_min: 10.0,
+            range2_max: 90.0,
+            range3_min: 40.0,
+            range3_max: 60.0,
         }
     }
 }
@@ -241,6 +277,7 @@ fn show_windows_menu(ui: &mut egui::Ui, dock_resource: &mut DockResource) {
         Panel::Assets,
         Panel::CircleSliders,
         Panel::QuaternionBall,
+        Panel::RangeSliders,
     ];
 
     for panel in &dynamic_windows {
@@ -374,8 +411,8 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                 let available_width = ui.available_width();
                 let spacing = 10.0;
                 let right_margin = 10.0;
-                let min_radius = 30.0;
-                let max_radius = 80.0;
+                let min_radius = 20.0;
+                let max_radius = 45.0;
                 
                 // Calculate if we can fit two sliders side by side
                 let min_width_for_two = (min_radius * 2.0 + 20.0) * 2.0 + spacing + right_margin;
@@ -449,38 +486,194 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                 ui.checkbox(&mut self.widget_demo_state.qball_snapping, "Enable Snapping (11.25°)");
                 ui.add_space(10.0);
                 
-                // Center the quaternion ball
-                ui.vertical_centered(|ui| {
-                    widgets::quaternion_ball(
-                        ui,
-                        &mut self.widget_demo_state.orientation,
-                        &mut self.widget_demo_state.x_axis_lat,
-                        &mut self.widget_demo_state.x_axis_lon,
-                        &mut self.widget_demo_state.y_axis_lat,
-                        &mut self.widget_demo_state.y_axis_lon,
-                        &mut self.widget_demo_state.z_axis_lat,
-                        &mut self.widget_demo_state.z_axis_lon,
-                        80.0,
-                        self.widget_demo_state.qball_snapping,
-                        &mut self.widget_demo_state.qball_locked_axis,
-                        &mut self.widget_demo_state.qball_initial_distance,
-                    );
-                });
+                // Calculate responsive ball size
+                let available_width = ui.available_width();
+                let available_height = ui.available_height();
                 
+                // Reserve space for checkbox and coordinates
+                let reserved_height = 120.0;
+                let usable_height = available_height - reserved_height;
+                
+                // Determine if we can fit two balls side by side
+                let min_width_for_two_balls = 250.0;
+                let side_by_side = available_width >= min_width_for_two_balls;
+                
+                let ball_radius = if side_by_side {
+                    // Two balls side by side - use available height and width
+                    let ball_width = (available_width / 2.0) - 40.0;
+                    let max_size = ball_width.min(usable_height);
+                    (max_size / 2.5).max(50.0).min(200.0)
+                } else {
+                    // Stacked vertically - each gets half the height
+                    let ball_height = (usable_height / 2.0) - 30.0;
+                    let available_ball_width = available_width - 150.0; // Reserve space for coordinates
+                    let max_size = ball_height.min(available_ball_width);
+                    (max_size / 2.5).max(50.0).min(150.0)
+                };
+                
+                if side_by_side {
+                    // Display balls horizontally with coordinates directly below each ball
+                    ui.horizontal(|ui| {
+                        ui.add_space(10.0);
+                        
+                        // Ball 1 with coordinates below
+                        ui.vertical(|ui| {
+                            widgets::quaternion_ball(
+                                ui,
+                                &mut self.widget_demo_state.orientation,
+                                &mut self.widget_demo_state.x_axis_lat,
+                                &mut self.widget_demo_state.x_axis_lon,
+                                &mut self.widget_demo_state.y_axis_lat,
+                                &mut self.widget_demo_state.y_axis_lon,
+                                &mut self.widget_demo_state.z_axis_lat,
+                                &mut self.widget_demo_state.z_axis_lon,
+                                ball_radius,
+                                self.widget_demo_state.qball_snapping,
+                                &mut self.widget_demo_state.qball_locked_axis,
+                                &mut self.widget_demo_state.qball_initial_distance,
+                            );
+                            
+                            ui.add_space(5.0);
+                            ui.label("Ball 1:");
+                            ui.colored_label(egui::Color32::from_rgb(79, 120, 255), 
+                                format!("X: ({:.1}°, {:.1}°)", self.widget_demo_state.x_axis_lat, self.widget_demo_state.x_axis_lon));
+                            ui.colored_label(egui::Color32::from_rgb(79, 255, 79), 
+                                format!("Y: ({:.1}°, {:.1}°)", self.widget_demo_state.y_axis_lat, self.widget_demo_state.y_axis_lon));
+                            ui.colored_label(egui::Color32::from_rgb(255, 79, 79), 
+                                format!("Z: ({:.1}°, {:.1}°)", self.widget_demo_state.z_axis_lat, self.widget_demo_state.z_axis_lon));
+                        });
+                        
+                        // Ball 2 with coordinates below
+                        ui.vertical(|ui| {
+                            widgets::quaternion_ball(
+                                ui,
+                                &mut self.widget_demo_state.orientation2,
+                                &mut self.widget_demo_state.x_axis_lat2,
+                                &mut self.widget_demo_state.x_axis_lon2,
+                                &mut self.widget_demo_state.y_axis_lat2,
+                                &mut self.widget_demo_state.y_axis_lon2,
+                                &mut self.widget_demo_state.z_axis_lat2,
+                                &mut self.widget_demo_state.z_axis_lon2,
+                                ball_radius,
+                                self.widget_demo_state.qball_snapping,
+                                &mut self.widget_demo_state.qball2_locked_axis,
+                                &mut self.widget_demo_state.qball2_initial_distance,
+                            );
+                            
+                            ui.add_space(5.0);
+                            ui.label("Ball 2:");
+                            ui.colored_label(egui::Color32::from_rgb(79, 120, 255), 
+                                format!("X: ({:.1}°, {:.1}°)", self.widget_demo_state.x_axis_lat2, self.widget_demo_state.x_axis_lon2));
+                            ui.colored_label(egui::Color32::from_rgb(79, 255, 79), 
+                                format!("Y: ({:.1}°, {:.1}°)", self.widget_demo_state.y_axis_lat2, self.widget_demo_state.y_axis_lon2));
+                            ui.colored_label(egui::Color32::from_rgb(255, 79, 79), 
+                                format!("Z: ({:.1}°, {:.1}°)", self.widget_demo_state.z_axis_lat2, self.widget_demo_state.z_axis_lon2));
+                        });
+                    });
+                } else {
+                    // Display balls vertically with coordinates to the right of each ball
+                    ui.horizontal(|ui| {
+                        ui.add_space(10.0);
+                        ui.vertical(|ui| {
+                            // Ball 1 with coordinates to the right
+                            ui.horizontal(|ui| {
+                                widgets::quaternion_ball(
+                                    ui,
+                                    &mut self.widget_demo_state.orientation,
+                                    &mut self.widget_demo_state.x_axis_lat,
+                                    &mut self.widget_demo_state.x_axis_lon,
+                                    &mut self.widget_demo_state.y_axis_lat,
+                                    &mut self.widget_demo_state.y_axis_lon,
+                                    &mut self.widget_demo_state.z_axis_lat,
+                                    &mut self.widget_demo_state.z_axis_lon,
+                                    ball_radius,
+                                    self.widget_demo_state.qball_snapping,
+                                    &mut self.widget_demo_state.qball_locked_axis,
+                                    &mut self.widget_demo_state.qball_initial_distance,
+                                );
+                                
+                                ui.vertical(|ui| {
+                                    ui.add_space(10.0);
+                                    ui.label("Ball 1:");
+                                    ui.colored_label(egui::Color32::from_rgb(79, 120, 255), 
+                                        format!("X: ({:.1}°, {:.1}°)", self.widget_demo_state.x_axis_lat, self.widget_demo_state.x_axis_lon));
+                                    ui.colored_label(egui::Color32::from_rgb(79, 255, 79), 
+                                        format!("Y: ({:.1}°, {:.1}°)", self.widget_demo_state.y_axis_lat, self.widget_demo_state.y_axis_lon));
+                                    ui.colored_label(egui::Color32::from_rgb(255, 79, 79), 
+                                        format!("Z: ({:.1}°, {:.1}°)", self.widget_demo_state.z_axis_lat, self.widget_demo_state.z_axis_lon));
+                                });
+                            });
+                            
+                            ui.add_space(10.0);
+                            
+                            // Ball 2 with coordinates to the right
+                            ui.horizontal(|ui| {
+                                widgets::quaternion_ball(
+                                    ui,
+                                    &mut self.widget_demo_state.orientation2,
+                                    &mut self.widget_demo_state.x_axis_lat2,
+                                    &mut self.widget_demo_state.x_axis_lon2,
+                                    &mut self.widget_demo_state.y_axis_lat2,
+                                    &mut self.widget_demo_state.y_axis_lon2,
+                                    &mut self.widget_demo_state.z_axis_lat2,
+                                    &mut self.widget_demo_state.z_axis_lon2,
+                                    ball_radius,
+                                    self.widget_demo_state.qball_snapping,
+                                    &mut self.widget_demo_state.qball2_locked_axis,
+                                    &mut self.widget_demo_state.qball2_initial_distance,
+                                );
+                                
+                                ui.vertical(|ui| {
+                                    ui.add_space(10.0);
+                                    ui.label("Ball 2:");
+                                    ui.colored_label(egui::Color32::from_rgb(79, 120, 255), 
+                                        format!("X: ({:.1}°, {:.1}°)", self.widget_demo_state.x_axis_lat2, self.widget_demo_state.x_axis_lon2));
+                                    ui.colored_label(egui::Color32::from_rgb(79, 255, 79), 
+                                        format!("Y: ({:.1}°, {:.1}°)", self.widget_demo_state.y_axis_lat2, self.widget_demo_state.y_axis_lon2));
+                                    ui.colored_label(egui::Color32::from_rgb(255, 79, 79), 
+                                        format!("Z: ({:.1}°, {:.1}°)", self.widget_demo_state.z_axis_lat2, self.widget_demo_state.z_axis_lon2));
+                                });
+                            });
+                        });
+                    });
+                }
+            }
+            Panel::RangeSliders => {
                 ui.add_space(10.0);
                 
-                // Display relative coordinates for each axis (all start at 0,0)
-                ui.label("Axis relative coordinates (lat, lon):");
-                ui.horizontal(|ui| {
-                    ui.colored_label(egui::Color32::from_rgb(79, 120, 255), 
-                        format!("X: ({:.1}°, {:.1}°)", self.widget_demo_state.x_axis_lat, self.widget_demo_state.x_axis_lon));
-                    ui.label(" ");
-                    ui.colored_label(egui::Color32::from_rgb(79, 255, 79), 
-                        format!("Y: ({:.1}°, {:.1}°)", self.widget_demo_state.y_axis_lat, self.widget_demo_state.y_axis_lon));
-                    ui.label(" ");
-                    ui.colored_label(egui::Color32::from_rgb(255, 79, 79), 
-                        format!("Z: ({:.1}°, {:.1}°)", self.widget_demo_state.z_axis_lat, self.widget_demo_state.z_axis_lon));
-                });
+                ui.label("Range Slider 1:");
+                widgets::range_slider(
+                    ui,
+                    "range1",
+                    &mut self.widget_demo_state.range1_min,
+                    &mut self.widget_demo_state.range1_max,
+                    0.0,
+                    100.0,
+                );
+                
+                ui.add_space(20.0);
+                
+                ui.label("Range Slider 2:");
+                widgets::range_slider(
+                    ui,
+                    "range2",
+                    &mut self.widget_demo_state.range2_min,
+                    &mut self.widget_demo_state.range2_max,
+                    0.0,
+                    100.0,
+                );
+                
+                ui.add_space(20.0);
+                
+                ui.label("Range Slider 3:");
+                widgets::range_slider(
+                    ui,
+                    "range3",
+                    &mut self.widget_demo_state.range3_min,
+                    &mut self.widget_demo_state.range3_max,
+                    0.0,
+                    100.0,
+                );
             }
         }
     }
