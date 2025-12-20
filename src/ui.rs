@@ -403,25 +403,25 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     ui.spacing_mut().item_spacing.y = 2.0;
                     
-                    let available_width = ui.available_width();
-                    let field_width = (available_width - ui.spacing().item_spacing.x) / 2.0;
-                    
-                    // Labels on one line aligned with fields below
+                    // Three buttons at the top
                     ui.horizontal(|ui| {
-                        ui.add_sized([field_width, ui.text_style_height(&egui::TextStyle::Body)], egui::Label::new("Genome Name:"));
-                        ui.add_sized([field_width, ui.text_style_height(&egui::TextStyle::Body)], egui::Label::new("Mode Name:"));
+                        if ui.button("Save Genome").clicked() {
+                            // TODO: Implement save genome
+                        }
+                        if ui.button("Load Genome").clicked() {
+                            // TODO: Implement load genome
+                        }
+                        if ui.button("Genome Graph").clicked() {
+                            // TODO: Implement genome graph
+                        }
                     });
                     
-                    // Fields on the next line
+                    ui.add_space(4.0);
+                    
+                    // Genome Name label and field on same line
                     ui.horizontal(|ui| {
-                        ui.add_sized(
-                            [field_width, ui.spacing().interact_size.y],
-                            egui::TextEdit::singleline(&mut self.widget_demo_state.genome_name)
-                        );
-                        ui.add_sized(
-                            [field_width, ui.spacing().interact_size.y],
-                            egui::TextEdit::singleline(&mut self.widget_demo_state.chemical_name)
-                        );
+                        ui.label("Genome Name:");
+                        ui.text_edit_singleline(&mut self.widget_demo_state.genome_name);
                     });
                     
                     ui.add_space(4.0);

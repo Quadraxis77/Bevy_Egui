@@ -89,7 +89,7 @@ pub fn create_default_layout() -> DockState<Panel> {
     );
     
     // Second: Add left panel (20% of remaining width, full height)
-    let [_left, rest] = surface.split_left(
+    let [_left_node, rest] = surface.split_left(
         rest,
         0.22,
         vec![Panel::LeftPanel]
@@ -108,6 +108,12 @@ pub fn create_default_layout() -> DockState<Panel> {
         0.25,
         vec![Panel::RightPanel]
     );
+
+    // Set absolute minimum size for left panel (300 pixels)
+    // The parent of left_node is the horizontal split that contains it
+    if let egui_dock::Node::Horizontal(split) = &mut surface[egui_dock::NodeIndex::root()] {
+        split.absolute_size_left = Some(0.0); // Will be initialized to current size on first render
+    }
 
     tree
 }

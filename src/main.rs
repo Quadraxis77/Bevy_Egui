@@ -18,7 +18,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "Bevy Egui Dock".to_string(),
-                resolution: WindowResolution::new(1280, 720),
+                resolution: WindowResolution::new(1920, 1080),
                 present_mode: bevy::window::PresentMode::AutoNoVsync,
                 resize_constraints: bevy::window::WindowResizeConstraints {
                     min_width: 800.0,
