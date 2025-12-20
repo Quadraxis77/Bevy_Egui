@@ -38,13 +38,6 @@ pub struct WidgetDemoState {
     pub y_axis_lon2: f32,
     pub z_axis_lat2: f32,
     pub z_axis_lon2: f32,
-    // Range slider values
-    pub range1_min: f32,
-    pub range1_max: f32,
-    pub range2_min: f32,
-    pub range2_max: f32,
-    pub range3_min: f32,
-    pub range3_max: f32,
     // Modes widget state
     pub modes_data: Vec<(String, egui::Color32)>,
     pub selected_mode: usize,
@@ -54,14 +47,35 @@ pub struct WidgetDemoState {
     pub copy_into_dialog_open: bool,
     pub copy_into_source: usize,
     pub color_picker_state: Option<(usize, egui::ecolor::Hsva)>,
-    // Scroll positions for placeholder panels
-    pub left_panel_scroll: f32,
-    pub right_panel_scroll: f32,
     // Chemical editor state
-    pub chemical_name: String,
     pub chemical_type: usize,
     pub make_adhesion: bool,
     pub genome_name: String,
+    // Adhesion settings sliders
+    pub adhesion1: f32,
+    pub adhesion2: f32,
+    pub adhesion3: f32,
+    pub adhesion4: f32,
+    pub adhesion5: f32,
+    pub adhesion6: f32,
+    pub adhesion7: f32,
+    pub adhesion8: f32,
+    pub adhesion9: f32,
+    // Quaternion ball mode selections
+    pub qball1_mode: usize,
+    pub qball2_mode: usize,
+    pub qball1_keep_adhesion: bool,
+    pub qball2_keep_adhesion: bool,
+    // Parent settings sliders
+    pub parent1: f32,
+    pub parent2: f32,
+    pub parent3: f32,
+    pub parent4: f32,
+    pub parent5: f32,
+    pub parent6: f32,
+    pub parent7: f32,
+    pub parent8: f32,
+    pub parent9: f32,
 }
 
 impl Default for WidgetDemoState {
@@ -91,16 +105,6 @@ impl Default for WidgetDemoState {
             y_axis_lon2: 0.0,
             z_axis_lat2: 0.0,
             z_axis_lon2: 0.0,
-            // Range sliders
-            range1_min: 25.0,
-            range1_max: 75.0,
-            range2_min: 10.0,
-            range2_max: 90.0,
-            range3_min: 40.0,
-            range3_max: 60.0,
-            // Scroll positions
-            left_panel_scroll: 0.0,
-            right_panel_scroll: 0.0,
             // Modes
             modes_data: vec![
                 ("M 0".to_string(), egui::Color32::from_rgb(255, 100, 100)),
@@ -120,10 +124,34 @@ impl Default for WidgetDemoState {
             copy_into_source: 0,
             color_picker_state: None,
             // Chemical editor
-            chemical_name: String::new(),
             chemical_type: 0,
             make_adhesion: false,
             genome_name: String::new(),
+            // Adhesion settings
+            adhesion1: 0.5,
+            adhesion2: 0.5,
+            adhesion3: 0.5,
+            adhesion4: 0.5,
+            adhesion5: 0.5,
+            adhesion6: 0.5,
+            adhesion7: 0.5,
+            adhesion8: 0.5,
+            adhesion9: 0.5,
+            // Quaternion ball modes
+            qball1_mode: 0,
+            qball2_mode: 0,
+            qball1_keep_adhesion: false,
+            qball2_keep_adhesion: false,
+            // Parent settings
+            parent1: 0.5,
+            parent2: 0.5,
+            parent3: 0.5,
+            parent4: 0.5,
+            parent5: 0.5,
+            parent6: 0.5,
+            parent7: 0.5,
+            parent8: 0.5,
+            parent9: 0.5,
         }
     }
 }
@@ -314,17 +342,31 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                                 );
                                 
                                 ui.add_space(5.0);
-                                ui.label("Ball 1:");
-                                ui.colored_label(egui::Color32::from_rgb(79, 120, 255), 
-                                    format!("X: ({:.1}°, {:.1}°)", self.widget_demo_state.x_axis_lat, self.widget_demo_state.x_axis_lon));
-                                ui.colored_label(egui::Color32::from_rgb(79, 255, 79), 
-                                    format!("Y: ({:.1}°, {:.1}°)", self.widget_demo_state.y_axis_lat, self.widget_demo_state.y_axis_lon));
-                                ui.colored_label(egui::Color32::from_rgb(255, 79, 79), 
-                                    format!("Z: ({:.1}°, {:.1}°)", self.widget_demo_state.z_axis_lat, self.widget_demo_state.z_axis_lon));
+                                
+                                // Keep Adhesion checkbox for ball 1
+                                ui.checkbox(&mut self.widget_demo_state.qball1_keep_adhesion, "Keep Adhesion");
+                                
+                                // Mode dropdown for ball 1
+                                let mode_color = self.widget_demo_state.modes_data[self.widget_demo_state.qball1_mode].1;
+                                egui::ComboBox::from_id_salt("qball1_mode")
+                                    .selected_text(
+                                        egui::RichText::new(&self.widget_demo_state.modes_data[self.widget_demo_state.qball1_mode].0)
+                                            .color(mode_color)
+                                    )
+                                    .width(80.0)
+                                    .show_ui(ui, |ui| {
+                                        for (i, (mode_name, color)) in self.widget_demo_state.modes_data.iter().enumerate() {
+                                            ui.selectable_value(
+                                                &mut self.widget_demo_state.qball1_mode, 
+                                                i, 
+                                                egui::RichText::new(mode_name).color(*color)
+                                            );
+                                        }
+                                    });
                             }
                         );
                         
-                        // Ball 2 with coordinates below
+                        // Ball 2 with mode dropdown below
                         ui.allocate_ui_with_layout(
                             egui::vec2(ball_container_width, 0.0),
                             egui::Layout::top_down(egui::Align::Center),
@@ -345,55 +387,30 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                                 );
                                 
                                 ui.add_space(5.0);
-                                ui.label("Ball 2:");
-                                ui.colored_label(egui::Color32::from_rgb(79, 120, 255), 
-                                    format!("X: ({:.1}°, {:.1}°)", self.widget_demo_state.x_axis_lat2, self.widget_demo_state.x_axis_lon2));
-                                ui.colored_label(egui::Color32::from_rgb(79, 255, 79), 
-                                    format!("Y: ({:.1}°, {:.1}°)", self.widget_demo_state.y_axis_lat2, self.widget_demo_state.y_axis_lon2));
-                                ui.colored_label(egui::Color32::from_rgb(255, 79, 79), 
-                                    format!("Z: ({:.1}°, {:.1}°)", self.widget_demo_state.z_axis_lat2, self.widget_demo_state.z_axis_lon2));
+                                
+                                // Keep Adhesion checkbox for ball 2
+                                ui.checkbox(&mut self.widget_demo_state.qball2_keep_adhesion, "Keep Adhesion");
+                                
+                                // Mode dropdown for ball 2
+                                let mode_color = self.widget_demo_state.modes_data[self.widget_demo_state.qball2_mode].1;
+                                egui::ComboBox::from_id_salt("qball2_mode")
+                                    .selected_text(
+                                        egui::RichText::new(&self.widget_demo_state.modes_data[self.widget_demo_state.qball2_mode].0)
+                                            .color(mode_color)
+                                    )
+                                    .width(80.0)
+                                    .show_ui(ui, |ui| {
+                                        for (i, (mode_name, color)) in self.widget_demo_state.modes_data.iter().enumerate() {
+                                            ui.selectable_value(
+                                                &mut self.widget_demo_state.qball2_mode, 
+                                                i, 
+                                                egui::RichText::new(mode_name).color(*color)
+                                            );
+                                        }
+                                    });
                             }
                         );
                     });
-                });
-            }
-            Panel::RangeSliders => {
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    ui.add_space(10.0);
-                    
-                    widgets::range_slider(
-                        ui,
-                        "Range Slider 1",
-                        "range1",
-                        &mut self.widget_demo_state.range1_min,
-                        &mut self.widget_demo_state.range1_max,
-                        0.0,
-                        100.0,
-                    );
-                    
-                    ui.add_space(10.0);
-                    
-                    widgets::range_slider(
-                        ui,
-                        "Range Slider 2",
-                        "range2",
-                        &mut self.widget_demo_state.range2_min,
-                        &mut self.widget_demo_state.range2_max,
-                        0.0,
-                        100.0,
-                    );
-                    
-                    ui.add_space(10.0);
-                    
-                    widgets::range_slider(
-                        ui,
-                        "Range Slider 3",
-                        "range3",
-                        &mut self.widget_demo_state.range3_min,
-                        &mut self.widget_demo_state.range3_max,
-                        0.0,
-                        100.0,
-                    );
                 });
             }
             Panel::Modes => {
@@ -440,6 +457,62 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                         
                         ui.checkbox(&mut self.widget_demo_state.make_adhesion, "Make Adhesion");
                     });
+                });
+            }
+            Panel::AdhesionSettings => {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    ui.add_space(10.0);
+                    
+                    // Sliders with labels on left, slider stretched, value on right
+                    for i in 1..=9 {
+                        ui.horizontal(|ui| {
+                            ui.label(format!("Adhesion {}:", i));
+                            
+                            let value = match i {
+                                1 => &mut self.widget_demo_state.adhesion1,
+                                2 => &mut self.widget_demo_state.adhesion2,
+                                3 => &mut self.widget_demo_state.adhesion3,
+                                4 => &mut self.widget_demo_state.adhesion4,
+                                5 => &mut self.widget_demo_state.adhesion5,
+                                6 => &mut self.widget_demo_state.adhesion6,
+                                7 => &mut self.widget_demo_state.adhesion7,
+                                8 => &mut self.widget_demo_state.adhesion8,
+                                _ => &mut self.widget_demo_state.adhesion9,
+                            };
+                            
+                            ui.style_mut().spacing.slider_width = ui.available_width() - 70.0;
+                            ui.add(egui::Slider::new(value, 0.0..=1.0).show_value(false));
+                            ui.add(egui::DragValue::new(value).speed(0.01).range(0.0..=1.0));
+                        });
+                    }
+                });
+            }
+            Panel::ParentSettings => {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    ui.add_space(10.0);
+                    
+                    // Sliders with labels on left, slider stretched, value on right
+                    for i in 1..=9 {
+                        ui.horizontal(|ui| {
+                            ui.label(format!("Parent {}:", i));
+                            
+                            let value = match i {
+                                1 => &mut self.widget_demo_state.parent1,
+                                2 => &mut self.widget_demo_state.parent2,
+                                3 => &mut self.widget_demo_state.parent3,
+                                4 => &mut self.widget_demo_state.parent4,
+                                5 => &mut self.widget_demo_state.parent5,
+                                6 => &mut self.widget_demo_state.parent6,
+                                7 => &mut self.widget_demo_state.parent7,
+                                8 => &mut self.widget_demo_state.parent8,
+                                _ => &mut self.widget_demo_state.parent9,
+                            };
+                            
+                            ui.style_mut().spacing.slider_width = ui.available_width() - 70.0;
+                            ui.add(egui::Slider::new(value, 0.0..=1.0).show_value(false));
+                            ui.add(egui::DragValue::new(value).speed(0.01).range(0.0..=1.0));
+                        });
+                    }
                 });
             }
         }

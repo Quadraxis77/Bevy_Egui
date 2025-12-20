@@ -22,9 +22,10 @@ pub enum Panel {
     Assets,
     CircleSliders,
     QuaternionBall,
-    RangeSliders,
     Modes,
     NameTypeEditor,
+    AdhesionSettings,
+    ParentSettings,
 }
 
 impl Panel {
@@ -46,9 +47,10 @@ impl std::fmt::Display for Panel {
             Panel::Assets => write!(f, "Assets"),
             Panel::CircleSliders => write!(f, "Circle Sliders"),
             Panel::QuaternionBall => write!(f, "Quaternion Ball"),
-            Panel::RangeSliders => write!(f, "Range Sliders"),
             Panel::Modes => write!(f, "Modes"),
             Panel::NameTypeEditor => write!(f, "Name/Type Editor"),
+            Panel::AdhesionSettings => write!(f, "Adhesion Settings"),
+            Panel::ParentSettings => write!(f, "Parent Settings"),
         }
     }
 }
@@ -197,9 +199,10 @@ pub fn show_windows_menu(ui: &mut bevy_egui::egui::Ui, dock_resource: &mut DockR
         Panel::Assets,
         Panel::CircleSliders,
         Panel::QuaternionBall,
-        Panel::RangeSliders,
         Panel::Modes,
         Panel::NameTypeEditor,
+        Panel::AdhesionSettings,
+        Panel::ParentSettings,
     ];
 
     for panel in &dynamic_windows {
