@@ -611,60 +611,39 @@ fn snap_quaternion_to_grid(q: Quat, grid_angle_deg: f32) -> Quat {
 }
 
 /// Modes buttons widget - displays just the control buttons
-/// Returns (add_clicked, remove_clicked, copy_clicked, copy_into_clicked, reset_clicked)
+/// Returns (copy_clicked, copy_into_clicked, reset_clicked)
 pub fn modes_buttons(
     ui: &mut Ui,
-    modes_count: usize,
-    selected_index: usize,
-    initial_mode: usize,
-) -> (bool, bool, bool, bool, bool) {
-    let mut add_clicked = false;
-    let mut remove_clicked = false;
+    _modes_count: usize,
+    _selected_index: usize,
+    _initial_mode: usize,
+) -> (bool, bool, bool) {
     let mut copy_clicked = false;
     let mut copy_into_clicked = false;
     let mut reset_clicked = false;
 
-    // Add/Remove/Copy buttons at the top
+    // Copy/Copy Into buttons on first line
     ui.horizontal(|ui| {
-        let button_size = egui::vec2(20.0, 20.0);
-
-        if ui.add_sized(button_size, egui::Button::new("+")).clicked() {
-            add_clicked = true;
-        }
-
-        let can_remove = modes_count > 1 && selected_index != initial_mode;
-        let remove_button = ui.add_enabled_ui(can_remove, |ui| {
-            ui.add_sized(button_size, egui::Button::new("-"))
-        }).inner;
-
-        if remove_button.clicked() {
-            remove_clicked = true;
-        }
-
-        // Show tooltip if hovering remove button and it's disabled
-        if remove_button.hovered() && !can_remove && selected_index == initial_mode {
-            remove_button.on_hover_text("Cannot remove a mode marked as initial");
-        }
-
-        // Copy button - compact
+        // Copy button
         if ui.small_button("Copy").clicked() {
             copy_clicked = true;
         }
-    });
 
-    ui.horizontal(|ui| {
-        // Reset button with counterclockwise arrow circle icon
-        if ui.small_button("⟲").on_hover_text("Reset mode").clicked() {
-            reset_clicked = true;
-        }
-
-        // Copy Into button - compact
+        // Copy Into button
         if ui.small_button("Copy Into").clicked() {
             copy_into_clicked = true;
         }
     });
 
-    (add_clicked, remove_clicked, copy_clicked, copy_into_clicked, reset_clicked)
+    // Reset button on second line
+    ui.horizontal(|ui| {
+        // Reset button with counterclockwise arrow circle icon
+        if ui.small_button("⟲").on_hover_text("Reset mode").clicked() {
+            reset_clicked = true;
+        }
+    });
+
+    (copy_clicked, copy_into_clicked, reset_clicked)
 }
 
 /// Modes list items widget - displays only the list of modes (for use in scroll area)
@@ -733,7 +712,10 @@ pub fn modes_list_items(
                 .fill(button_color)
                 .wrap_mode(egui::TextWrapMode::Truncate); // Allow text to truncate instead of forcing width
             
-            let button_response = ui.add_sized(egui::vec2(button_width, button_height), button);
+            let mut button_response = ui.add_sized(egui::vec2(button_width, button_height), button);
+            
+            // Show tooltip with full name on hover
+            button_response = button_response.on_hover_text(name);
             
             if button_response.hovered() {
                 // Draw hover effect manually
@@ -861,115 +843,49 @@ pub fn modes_list_items(
     (selection_changed, initial_changed, rename_index, color_picker_index)
 }
 
-/// Generate the next available mode name based on a base name
-/// Uses hierarchical dot notation for modes inserted between existing modes
-/// 
-/// Rules:
-/// - Adding after M 0 when M 1 doesn't exist -> M 1
-/// - Adding between M 0 and M 1 -> M 0.1
-/// - Adding after M 0.1 when M 0.2 doesn't exist -> M 0.2
-/// - Adding between M 1 and M 1.1 -> M 1.0.1
-/// - Adding between M 0 and M 0.1 -> M 0.0.1
-/// - Adding between M 0 and M 0.0.0.1 -> M 0.0.1
+/// Generate the next available mode number (simple sequential 1-120)
+pub fn generate_next_mode_number(base_number: &str, existing_numbers: &[String]) -> String {
+    // Try to increment the base number
+    if let Ok(num) = base_number.parse::<i32>() {
+        let next = num + 1;
+        if next <= 120 && !existing_numbers.iter().any(|n| n == &next.to_string()) {
+            return next.to_string();
+        }
+    }
+    
+    // Find the first available number from 1-120
+    for i in 1..=120 {
+        let candidate = i.to_string();
+        if !existing_numbers.iter().any(|n| n == &candidate) {
+            return candidate;
+        }
+    }
+    
+    // Fallback (shouldn't happen with 120 slots)
+    "1".to_string()
+}
+
+/// Generate a unique display name for a mode
+/// If the base name is taken, appends " Copy", " Copy 2", etc.
 pub fn generate_next_mode_name(base_name: &str, existing_names: &[String]) -> String {
-    // Helper to check if a name is already used
-    let is_name_taken = |candidate: &str| {
-        existing_names.iter().any(|name| name == candidate)
-    };
+    if !existing_names.iter().any(|name| name == base_name) {
+        return base_name.to_string();
+    }
     
-    // Helper to check if a mode has any children
-    let has_children = |mode_num: &str| {
-        existing_names.iter().any(|name| {
-            if let Some(num_part) = name.strip_prefix("M ") {
-                num_part.starts_with(&format!("{}.", mode_num))
-            } else {
-                false
-            }
-        })
-    };
+    // Try "Name Copy"
+    let copy_name = format!("{} Copy", base_name);
+    if !existing_names.iter().any(|name| name == &copy_name) {
+        return copy_name;
+    }
     
-    // Extract the number part from the name (everything after "M ")
-    let number_part = if let Some(num_str) = base_name.strip_prefix("M ") {
-        num_str
-    } else {
-        // Fallback if name doesn't start with "M "
-        return format!("M {}", existing_names.len());
-    };
-    
-    // Check if current mode has children - if so, we need to insert at intermediate level
-    if has_children(number_part) {
-        // Try progressively deeper intermediate levels
-        // M 0 with child M 0.0.0.1 should try: M 0.1, M 0.0.1, M 0.0.0.1 (taken), M 0.0.0.0.1
-        
-        // First try simple .1
-        let candidate = format!("M {}.1", number_part);
-        if !is_name_taken(&candidate) {
-            return candidate;
-        }
-        
-        // Then try .0.1, .0.0.1, .0.0.0.1, etc.
-        let mut test_name = number_part.to_string();
-        for _ in 0..10 {
-            test_name = format!("{}.0", test_name);
-            let candidate = format!("M {}.1", test_name);
-            if !is_name_taken(&candidate) {
-                return candidate;
-            }
+    // Try "Name Copy 2", "Name Copy 3", etc.
+    for i in 2..1000 {
+        let numbered_copy = format!("{} Copy {}", base_name, i);
+        if !existing_names.iter().any(|name| name == &numbered_copy) {
+            return numbered_copy;
         }
     }
     
-    // Parse the hierarchical parts (e.g., "0.1.2" -> ["0", "1", "2"])
-    let parts: Vec<&str> = number_part.split('.').collect();
-    
-    // Try to increment at the same level first (for adding after, not between)
-    if let Some(last_part) = parts.last() {
-        if let Ok(last_num) = last_part.parse::<i32>() {
-            let prefix = if parts.len() > 1 {
-                parts[..parts.len() - 1].join(".")
-            } else {
-                String::new()
-            };
-            
-            let next_sibling_num = if prefix.is_empty() {
-                format!("{}", last_num + 1)
-            } else {
-                format!("{}.{}", prefix, last_num + 1)
-            };
-            
-            let next_sibling = format!("M {}", next_sibling_num);
-            
-            // Check if the next sibling exists at the same depth
-            if !is_name_taken(&next_sibling) {
-                return next_sibling;
-            }
-        }
-    }
-    
-    // If incrementing at same level is taken, we're inserting between modes
-    // Try adding .1, .2, .3, etc. at the current depth
-    for i in 1..100 {
-        let candidate_name = format!("M {}.{}", number_part, i);
-        if !is_name_taken(&candidate_name) {
-            return candidate_name;
-        }
-    }
-    
-    // If all numbers at this depth are taken, go one level deeper with .0.1
-    let candidate_name = format!("M {}.0.1", number_part);
-    if !is_name_taken(&candidate_name) {
-        return candidate_name;
-    }
-    
-    // Keep adding .0 levels until we find an available name
-    let mut test_name = number_part.to_string();
-    for _ in 0..10 {
-        test_name = format!("{}.0.1", test_name);
-        let candidate = format!("M {}", test_name);
-        if !is_name_taken(&candidate) {
-            return candidate;
-        }
-    }
-    
-    // Fallback: use total mode count
-    format!("M {}", existing_names.len())
+    // Fallback
+    format!("{} Copy {}", base_name, existing_names.len())
 }

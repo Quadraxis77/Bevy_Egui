@@ -1,11 +1,34 @@
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContext};
 use egui_dock::{DockArea, Style};
-use std::collections::hash_map::RandomState;
-use std::hash::{BuildHasher, Hash, Hasher};
 
 use crate::dock::*;
 use crate::widgets;
+
+// Helper function to convert HSV hue to RGB
+fn hue_to_rgb(hue: f32) -> (u8, u8, u8) {
+    let h = hue / 60.0;
+    let c = 1.0;
+    let x = 1.0 - (h % 2.0 - 1.0).abs();
+    
+    let (r, g, b) = if h < 1.0 {
+        (c, x, 0.0)
+    } else if h < 2.0 {
+        (x, c, 0.0)
+    } else if h < 3.0 {
+        (0.0, c, x)
+    } else if h < 4.0 {
+        (0.0, x, c)
+    } else if h < 5.0 {
+        (x, 0.0, c)
+    } else {
+        (c, 0.0, x)
+    };
+    
+    // Scale to 100-255 range for better visibility
+    let scale = |v: f32| ((v * 155.0) + 100.0) as u8;
+    (scale(r), scale(g), scale(b))
+}
 
 #[derive(Resource, Default)]
 pub struct ViewportRect {
@@ -15,7 +38,8 @@ pub struct ViewportRect {
 // Mode data structure matching the reference project
 #[derive(Clone)]
 pub struct ModeData {
-    pub name: String,
+    pub name: String,  // Display name (can be customized by user)
+    pub number: String,  // Underlying hierarchical number (e.g., "0", "0.1", "0.0.1")
     pub color: egui::Color32,
     // Parent settings
     pub split_angle_pitch: f32,
@@ -67,7 +91,8 @@ pub struct ModeData {
 impl Default for ModeData {
     fn default() -> Self {
         Self {
-            name: "M 0".to_string(),
+            name: "M 1".to_string(),
+            number: "1".to_string(),
             color: egui::Color32::from_rgb(255, 100, 100),
             split_angle_pitch: 0.0,
             split_angle_yaw: 0.0,
@@ -141,23 +166,20 @@ pub struct WidgetDemoState {
 impl Default for WidgetDemoState {
     fn default() -> Self {
         let mut modes = Vec::new();
-        let colors = vec![
-            egui::Color32::from_rgb(255, 100, 100),
-            egui::Color32::from_rgb(100, 255, 100),
-            egui::Color32::from_rgb(100, 100, 255),
-            egui::Color32::from_rgb(255, 255, 100),
-            egui::Color32::from_rgb(255, 100, 255),
-            egui::Color32::from_rgb(100, 255, 255),
-            egui::Color32::from_rgb(200, 150, 100),
-            egui::Color32::from_rgb(150, 100, 200),
-        ];
         
-        for (i, color) in colors.iter().enumerate() {
+        // Create all 120 modes
+        for i in 1..=120 {
             let mut mode = ModeData::default();
             mode.name = format!("M {}", i);
-            mode.color = *color;
-            mode.child_a_mode = i;
-            mode.child_b_mode = i;
+            mode.number = format!("{}", i);
+            
+            // Generate a color based on the mode number
+            let hue = ((i - 1) as f32 / 120.0) * 360.0;
+            let (r, g, b) = hue_to_rgb(hue);
+            mode.color = egui::Color32::from_rgb(r, g, b);
+            
+            mode.child_a_mode = i - 1; // Index is 0-based
+            mode.child_b_mode = i - 1;
             modes.push(mode);
         }
         
@@ -877,7 +899,7 @@ fn render_modes_panel(ui: &mut egui::Ui, widget_demo_state: &mut WidgetDemoState
     }
 
     // Draw buttons outside scroll area
-    let (add_clicked, remove_clicked, copy_clicked, copy_into_clicked, reset_clicked) = widgets::modes_buttons(
+    let (copy_clicked, copy_into_clicked, reset_clicked) = widgets::modes_buttons(
         ui,
         widget_demo_state.modes_data.len(),
         widget_demo_state.selected_mode,
@@ -960,14 +982,8 @@ fn render_modes_panel(ui: &mut egui::Ui, widget_demo_state: &mut WidgetDemoState
         if selected_idx < widget_demo_state.modes_data.len() {
             let insert_idx = selected_idx + 1;
 
-            // Copy the selected mode
-            let mut new_mode = widget_demo_state.modes_data[selected_idx].clone();
-
-            // Generate new name
-            let existing_names: Vec<String> = widget_demo_state.modes_data.iter()
-                .map(|m| m.name.clone())
-                .collect();
-            new_mode.name = widgets::generate_next_mode_name(&new_mode.name, &existing_names);
+            // Copy the selected mode completely (including name)
+            let new_mode = widget_demo_state.modes_data[selected_idx].clone();
 
             widget_demo_state.modes_data.insert(insert_idx, new_mode);
 
@@ -1006,85 +1022,6 @@ fn render_modes_panel(ui: &mut egui::Ui, widget_demo_state: &mut WidgetDemoState
             widget_demo_state.modes_data[selected_idx].child_a_mode = selected_idx;
             widget_demo_state.modes_data[selected_idx].child_b_mode = selected_idx;
             info!("Reset mode {}", selected_idx);
-        }
-    }
-
-    // Don't handle add/remove/copy when in copy into mode
-    if widget_demo_state.copy_into_dialog_open {
-        return;
-    }
-
-    // Handle add mode
-    if add_clicked {
-        let selected_idx = widget_demo_state.selected_mode;
-        let insert_idx = if selected_idx < widget_demo_state.modes_data.len() {
-            selected_idx + 1
-        } else {
-            widget_demo_state.modes_data.len()
-        };
-
-        // Generate new mode name
-        let existing_names: Vec<String> = widget_demo_state.modes_data.iter()
-            .map(|m| m.name.clone())
-            .collect();
-        let base_name = if selected_idx < widget_demo_state.modes_data.len() {
-            &widget_demo_state.modes_data[selected_idx].name
-        } else {
-            "M 0"
-        };
-        let new_name = widgets::generate_next_mode_name(base_name, &existing_names);
-
-        // Generate random color
-        let mut hasher = RandomState::new().build_hasher();
-        insert_idx.hash(&mut hasher);
-        let hash = hasher.finish();
-        let new_color = egui::Color32::from_rgb(
-            ((hash % 156) + 100) as u8,
-            (((hash >> 8) % 156) + 100) as u8,
-            (((hash >> 16) % 156) + 100) as u8,
-        );
-
-        let mut new_mode = ModeData::default();
-        new_mode.name = new_name;
-        new_mode.color = new_color;
-        new_mode.child_a_mode = insert_idx;
-        new_mode.child_b_mode = insert_idx;
-
-        widget_demo_state.modes_data.insert(insert_idx, new_mode);
-
-        // Adjust selection if needed
-        if insert_idx <= selected_idx {
-            widget_demo_state.selected_mode = selected_idx + 1;
-        }
-
-        // Adjust initial mode if needed
-        if insert_idx <= widget_demo_state.initial_mode {
-            widget_demo_state.initial_mode += 1;
-        }
-
-        info!("Added new mode at index {}", insert_idx);
-    }
-
-    // Handle remove mode
-    if remove_clicked {
-        let selected = widget_demo_state.selected_mode;
-        if widget_demo_state.modes_data.len() > 1
-            && selected < widget_demo_state.modes_data.len()
-            && selected != widget_demo_state.initial_mode {
-
-            widget_demo_state.modes_data.remove(selected);
-
-            // Adjust selected index
-            if widget_demo_state.selected_mode >= widget_demo_state.modes_data.len() {
-                widget_demo_state.selected_mode = widget_demo_state.modes_data.len() - 1;
-            }
-
-            // Adjust initial mode if needed
-            if widget_demo_state.initial_mode > selected {
-                widget_demo_state.initial_mode -= 1;
-            }
-
-            info!("Removed mode at index {}", selected);
         }
     }
 }

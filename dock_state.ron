@@ -30,7 +30,7 @@
                             y: 752.0,
                         ),
                     ),
-                    fraction: 0.71839297,
+                    fraction: 0.7277863,
                     absolute_size_left: None,
                     absolute_size_right: None,
                     fully_collapsed: false,
@@ -47,7 +47,7 @@
                             y: 752.0,
                         ),
                     ),
-                    fraction: 0.840499,
+                    fraction: 0.8678917,
                     absolute_size_left: None,
                     absolute_size_right: None,
                     fully_collapsed: false,
@@ -61,7 +61,7 @@
                         ),
                         max: (
                             x: 316.57144,
-                            y: 545.7143,
+                            y: 552.5714,
                         ),
                     ),
                     fraction: 0.2034711,
@@ -74,7 +74,7 @@
                     rect: (
                         min: (
                             x: 0.0,
-                            y: 546.8571,
+                            y: 553.7143,
                         ),
                         max: (
                             x: 316.57144,
@@ -84,7 +84,7 @@
                     viewport: (
                         min: (
                             x: 0.0,
-                            y: 570.84375,
+                            y: 577.71875,
                         ),
                         max: (
                             x: 316.5625,
@@ -107,11 +107,11 @@
                             y: 22.0,
                         ),
                         max: (
-                            x: 1702.8572,
+                            x: 1748.0,
                             y: 752.0,
                         ),
                     ),
-                    fraction: 0.8900293,
+                    fraction: 0.83210397,
                     absolute_size_left: None,
                     absolute_size_right: None,
                     fully_collapsed: false,
@@ -120,7 +120,7 @@
                 Leaf((
                     rect: (
                         min: (
-                            x: 1704.0,
+                            x: 1749.1428,
                             y: 22.0,
                         ),
                         max: (
@@ -130,7 +130,7 @@
                     ),
                     viewport: (
                         min: (
-                            x: 1704.0,
+                            x: 1749.1563,
                             y: 22.0,
                         ),
                         max: (
@@ -153,7 +153,7 @@
                         ),
                         max: (
                             x: 316.57144,
-                            y: 128.0,
+                            y: 129.14285,
                         ),
                     ),
                     viewport: (
@@ -163,7 +163,7 @@
                         ),
                         max: (
                             x: 316.5625,
-                            y: 128.0,
+                            y: 129.15625,
                         ),
                     ),
                     tabs: [
@@ -177,14 +177,14 @@
                     rect: (
                         min: (
                             x: 0.0,
-                            y: 128.57143,
+                            y: 130.28572,
                         ),
                         max: (
                             x: 316.57144,
-                            y: 545.7143,
+                            y: 552.5714,
                         ),
                     ),
-                    fraction: 0.35276192,
+                    fraction: 0.37983778,
                     absolute_size_left: None,
                     absolute_size_right: None,
                     fully_collapsed: false,
@@ -199,8 +199,8 @@
                             y: 22.0,
                         ),
                         max: (
-                            x: 1702.8572,
-                            y: 671.4286,
+                            x: 1748.0,
+                            y: 629.1429,
                         ),
                     ),
                     viewport: (
@@ -209,8 +209,8 @@
                             y: 22.0,
                         ),
                         max: (
-                            x: 1702.875,
-                            y: 671.4375,
+                            x: 1748.0,
+                            y: 629.15625,
                         ),
                     ),
                     tabs: [
@@ -224,14 +224,14 @@
                     rect: (
                         min: (
                             x: 317.7143,
-                            y: 672.0,
+                            y: 629.7143,
                         ),
                         max: (
-                            x: 1702.8572,
+                            x: 1748.0,
                             y: 752.0,
                         ),
                     ),
-                    fraction: 0.5141353,
+                    fraction: 0.5,
                     absolute_size_left: None,
                     absolute_size_right: None,
                     fully_collapsed: false,
@@ -245,21 +245,21 @@
                     rect: (
                         min: (
                             x: 0.0,
-                            y: 128.57143,
+                            y: 130.28572,
                         ),
                         max: (
-                            x: 111.42857,
-                            y: 545.7143,
+                            x: 120.0,
+                            y: 552.5714,
                         ),
                     ),
                     viewport: (
                         min: (
                             x: 0.0,
-                            y: 152.5625,
+                            y: 154.28125,
                         ),
                         max: (
-                            x: 111.4375,
-                            y: 545.71875,
+                            x: 120.0,
+                            y: 552.5625,
                         ),
                     ),
                     tabs: [
@@ -272,15 +272,15 @@
                 Vertical((
                     rect: (
                         min: (
-                            x: 112.0,
-                            y: 128.57143,
+                            x: 120.57143,
+                            y: 130.28572,
                         ),
                         max: (
                             x: 316.57144,
-                            y: 545.7143,
+                            y: 552.5714,
                         ),
                     ),
-                    fraction: 0.39959756,
+                    fraction: 0.39715844,
                     absolute_size_left: None,
                     absolute_size_right: None,
                     fully_collapsed: false,
@@ -296,20 +296,20 @@
                     rect: (
                         min: (
                             x: 317.7143,
-                            y: 672.0,
+                            y: 629.7143,
                         ),
                         max: (
-                            x: 1029.1428,
+                            x: 1032.5714,
                             y: 752.0,
                         ),
                     ),
                     viewport: (
                         min: (
                             x: 317.71875,
-                            y: 696.0,
+                            y: 653.71875,
                         ),
                         max: (
-                            x: 1029.1563,
+                            x: 1032.5625,
                             y: 752.0,
                         ),
                     ),
@@ -323,21 +323,21 @@
                 Leaf((
                     rect: (
                         min: (
-                            x: 1030.2858,
-                            y: 672.0,
+                            x: 1033.1428,
+                            y: 629.7143,
                         ),
                         max: (
-                            x: 1702.8572,
+                            x: 1748.0,
                             y: 752.0,
                         ),
                     ),
                     viewport: (
                         min: (
-                            x: 1030.2813,
-                            y: 672.0,
+                            x: 1033.1563,
+                            y: 629.71875,
                         ),
                         max: (
-                            x: 1702.8438,
+                            x: 1748.0,
                             y: 752.0,
                         ),
                     ),
@@ -361,22 +361,22 @@
                 Leaf((
                     rect: (
                         min: (
-                            x: 112.0,
-                            y: 128.57143,
+                            x: 120.57143,
+                            y: 130.28572,
                         ),
                         max: (
                             x: 316.57144,
-                            y: 294.85715,
+                            y: 297.7143,
                         ),
                     ),
                     viewport: (
                         min: (
-                            x: 112.0,
-                            y: 152.5625,
+                            x: 120.5625,
+                            y: 154.28125,
                         ),
                         max: (
                             x: 316.5625,
-                            y: 294.84375,
+                            y: 297.71875,
                         ),
                     ),
                     tabs: [
@@ -389,22 +389,22 @@
                 Leaf((
                     rect: (
                         min: (
-                            x: 112.0,
-                            y: 296.0,
+                            x: 120.57143,
+                            y: 298.2857,
                         ),
                         max: (
                             x: 316.57144,
-                            y: 545.7143,
+                            y: 552.5714,
                         ),
                     ),
                     viewport: (
                         min: (
-                            x: 112.0,
-                            y: 320.0,
+                            x: 120.5625,
+                            y: 322.28125,
                         ),
                         max: (
                             x: 316.5625,
-                            y: 545.71875,
+                            y: 552.5625,
                         ),
                     ),
                     tabs: [
@@ -414,70 +414,6 @@
                     scroll: 0.0,
                     collapsed: false,
                 )),
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
                 Empty,
                 Empty,
                 Empty,
