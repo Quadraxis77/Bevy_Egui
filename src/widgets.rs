@@ -863,10 +863,28 @@ pub fn modes_list_items(
 
 /// Generate the next available mode name based on a base name
 /// Uses hierarchical dot notation for modes inserted between existing modes
+/// 
+/// Rules:
+/// - Adding after M 0 when M 1 doesn't exist -> M 1
+/// - Adding between M 0 and M 1 -> M 0.1
+/// - Adding after M 0.1 when M 0.2 doesn't exist -> M 0.2
+/// - Adding between M 1 and M 1.1 -> M 1.0.1
+/// - Adding between M 0 and M 0.1 -> M 0.0.1
 pub fn generate_next_mode_name(base_name: &str, existing_names: &[String]) -> String {
     // Helper to check if a name is already used
     let is_name_taken = |candidate: &str| {
         existing_names.iter().any(|name| name == candidate)
+    };
+    
+    // Helper to check if a mode has any children
+    let has_children = |mode_num: &str| {
+        existing_names.iter().any(|name| {
+            if let Some(num_part) = name.strip_prefix("M ") {
+                num_part.starts_with(&format!("{}.", mode_num))
+            } else {
+                false
+            }
+        })
     };
     
     // Extract the number part from the name (everything after "M ")
@@ -877,49 +895,72 @@ pub fn generate_next_mode_name(base_name: &str, existing_names: &[String]) -> St
         return format!("M {}", existing_names.len());
     };
     
-    // Check if the base name has dots (hierarchical notation)
-    if number_part.contains('.') {
-        // Hierarchical mode (e.g., "M 1.1" or "M 1.1.1")
-        let parts: Vec<&str> = number_part.split('.').collect();
-        if let Some(last_num_str) = parts.last() {
-            if let Ok(last_num) = last_num_str.parse::<i32>() {
-                // Try incrementing the last number (e.g., "M 1.1" -> "M 1.2")
-                let prefix = &parts[..parts.len() - 1].join(".");
-                let next_sibling_name = if prefix.is_empty() {
-                    format!("M {}", last_num + 1)
-                } else {
-                    format!("M {}.{}", prefix, last_num + 1)
-                };
-                
-                if !is_name_taken(&next_sibling_name) {
-                    return next_sibling_name;
-                }
+    // Check if current mode has children - if so, we need to insert at intermediate level
+    if has_children(number_part) {
+        let intermediate = format!("M {}.0.1", number_part);
+        if !is_name_taken(&intermediate) {
+            return intermediate;
+        }
+        // If .0.1 is taken, keep trying deeper levels
+        let mut test_name = format!("{}.0", number_part);
+        for _ in 0..10 {
+            test_name = format!("{}.0.1", test_name);
+            let candidate = format!("M {}", test_name);
+            if !is_name_taken(&candidate) {
+                return candidate;
             }
         }
-        
-        // If incrementing at the same level is taken, add a sub-level
-        for i in 1..100 {
-            let candidate_name = format!("M {}.{}", number_part, i);
-            if !is_name_taken(&candidate_name) {
-                return candidate_name;
-            }
-        }
-    } else {
-        // Simple mode (e.g., "M 1")
-        if let Ok(base_number) = number_part.parse::<i32>() {
-            // Try the next integer first (e.g., "M 1" -> "M 2")
-            let next_int_name = format!("M {}", base_number + 1);
-            if !is_name_taken(&next_int_name) {
-                return next_int_name;
-            }
+    }
+    
+    // Parse the hierarchical parts (e.g., "0.1.2" -> ["0", "1", "2"])
+    let parts: Vec<&str> = number_part.split('.').collect();
+    
+    // Try to increment at the same level first (for adding after, not between)
+    if let Some(last_part) = parts.last() {
+        if let Ok(last_num) = last_part.parse::<i32>() {
+            let prefix = if parts.len() > 1 {
+                parts[..parts.len() - 1].join(".")
+            } else {
+                String::new()
+            };
             
-            // If that's taken, add hierarchical level (e.g., "M 1.1", "M 1.2", etc.)
-            for i in 1..100 {
-                let candidate_name = format!("M {}.{}", base_number, i);
-                if !is_name_taken(&candidate_name) {
-                    return candidate_name;
-                }
+            let next_sibling_num = if prefix.is_empty() {
+                format!("{}", last_num + 1)
+            } else {
+                format!("{}.{}", prefix, last_num + 1)
+            };
+            
+            let next_sibling = format!("M {}", next_sibling_num);
+            
+            // Check if the next sibling exists at the same depth
+            if !is_name_taken(&next_sibling) {
+                return next_sibling;
             }
+        }
+    }
+    
+    // If incrementing at same level is taken, we're inserting between modes
+    // Try adding .1, .2, .3, etc. at the current depth
+    for i in 1..100 {
+        let candidate_name = format!("M {}.{}", number_part, i);
+        if !is_name_taken(&candidate_name) {
+            return candidate_name;
+        }
+    }
+    
+    // If all numbers at this depth are taken, go one level deeper with .0.1
+    let candidate_name = format!("M {}.0.1", number_part);
+    if !is_name_taken(&candidate_name) {
+        return candidate_name;
+    }
+    
+    // Keep adding .0 levels until we find an available name
+    let mut test_name = number_part.to_string();
+    for _ in 0..10 {
+        test_name = format!("{}.0.1", test_name);
+        let candidate = format!("M {}", test_name);
+        if !is_name_taken(&candidate) {
+            return candidate;
         }
     }
     

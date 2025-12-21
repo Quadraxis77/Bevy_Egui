@@ -12,114 +12,158 @@ pub struct ViewportRect {
     pub rect: Option<egui::Rect>,
 }
 
+// Mode data structure matching the reference project
+#[derive(Clone)]
+pub struct ModeData {
+    pub name: String,
+    pub color: egui::Color32,
+    // Parent settings
+    pub split_angle_pitch: f32,
+    pub split_angle_yaw: f32,
+    pub split_mass: f32,
+    pub split_interval: f32,
+    pub nutrient_priority: f32,
+    pub prioritize_when_low: bool,
+    pub max_connections: f32,
+    pub min_connections: f32,
+    pub max_splits: f32,
+    // Child A settings
+    pub child_a_mode: usize,
+    pub child_a_orientation: Quat,
+    pub child_a_keep_adhesion: bool,
+    pub child_a_x_lat: f32,
+    pub child_a_x_lon: f32,
+    pub child_a_y_lat: f32,
+    pub child_a_y_lon: f32,
+    pub child_a_z_lat: f32,
+    pub child_a_z_lon: f32,
+    // Child B settings
+    pub child_b_mode: usize,
+    pub child_b_orientation: Quat,
+    pub child_b_keep_adhesion: bool,
+    pub child_b_x_lat: f32,
+    pub child_b_x_lon: f32,
+    pub child_b_y_lat: f32,
+    pub child_b_y_lon: f32,
+    pub child_b_z_lat: f32,
+    pub child_b_z_lon: f32,
+    // Adhesion settings
+    pub adhesion_can_break: bool,
+    pub adhesion_break_force: f32,
+    pub adhesion_rest_length: f32,
+    pub linear_spring_stiffness: f32,
+    pub linear_spring_damping: f32,
+    pub angular_spring_stiffness: f32,
+    pub angular_spring_damping: f32,
+    pub max_angular_deviation: f32,
+    pub enable_twist_constraint: bool,
+    pub twist_constraint_stiffness: f32,
+    pub twist_constraint_damping: f32,
+    // Cell type
+    pub cell_type: usize,
+    pub make_adhesion: bool,
+}
+
+impl Default for ModeData {
+    fn default() -> Self {
+        Self {
+            name: "M 0".to_string(),
+            color: egui::Color32::from_rgb(255, 100, 100),
+            split_angle_pitch: 0.0,
+            split_angle_yaw: 0.0,
+            split_mass: 1.5,
+            split_interval: 5.0,
+            nutrient_priority: 1.0,
+            prioritize_when_low: true,
+            max_connections: 20.0,
+            min_connections: 0.0,
+            max_splits: -1.0,
+            child_a_mode: 0,
+            child_a_orientation: Quat::IDENTITY,
+            child_a_keep_adhesion: false,
+            child_a_x_lat: 0.0,
+            child_a_x_lon: 0.0,
+            child_a_y_lat: 0.0,
+            child_a_y_lon: 0.0,
+            child_a_z_lat: 0.0,
+            child_a_z_lon: 0.0,
+            child_b_mode: 0,
+            child_b_orientation: Quat::IDENTITY,
+            child_b_keep_adhesion: false,
+            child_b_x_lat: 0.0,
+            child_b_x_lon: 0.0,
+            child_b_y_lat: 0.0,
+            child_b_y_lon: 0.0,
+            child_b_z_lat: 0.0,
+            child_b_z_lon: 0.0,
+            adhesion_can_break: true,
+            adhesion_break_force: 10.0,
+            adhesion_rest_length: 2.0,
+            linear_spring_stiffness: 50.0,
+            linear_spring_damping: 1.0,
+            angular_spring_stiffness: 10.0,
+            angular_spring_damping: 1.0,
+            max_angular_deviation: 0.0,
+            enable_twist_constraint: false,
+            twist_constraint_stiffness: 0.5,
+            twist_constraint_damping: 1.0,
+            cell_type: 0,
+            make_adhesion: false,
+        }
+    }
+}
+
 #[derive(Resource)]
 pub struct WidgetDemoState {
-    pub angle1: f32,
-    pub angle2: f32,
-    pub enable_snapping: bool,
-    pub orientation: Quat,
-    pub qball_snapping: bool,
-    pub qball_locked_axis: i32,
-    pub qball_initial_distance: f32,
-    // Direct lat/lon coordinates for each axis endpoint (ball 1)
-    pub x_axis_lat: f32,
-    pub x_axis_lon: f32,
-    pub y_axis_lat: f32,
-    pub y_axis_lon: f32,
-    pub z_axis_lat: f32,
-    pub z_axis_lon: f32,
-    // Second ball state
-    pub orientation2: Quat,
-    pub qball2_locked_axis: i32,
-    pub qball2_initial_distance: f32,
-    pub x_axis_lat2: f32,
-    pub x_axis_lon2: f32,
-    pub y_axis_lat2: f32,
-    pub y_axis_lon2: f32,
-    pub z_axis_lat2: f32,
-    pub z_axis_lon2: f32,
-    // Modes widget state
-    pub modes_data: Vec<(String, egui::Color32)>,
+    // Genome-level state
+    pub genome_name: String,
+    pub modes_data: Vec<ModeData>,
     pub selected_mode: usize,
     pub initial_mode: usize,
+    // UI state for modes panel
     pub renaming_mode: Option<usize>,
     pub rename_buffer: String,
     pub copy_into_dialog_open: bool,
     pub copy_into_source: usize,
     pub color_picker_state: Option<(usize, egui::ecolor::Hsva)>,
-    // Chemical editor state
-    pub chemical_type: usize,
-    pub make_adhesion: bool,
-    pub genome_name: String,
-    // Adhesion settings sliders
-    pub adhesion1: f32,
-    pub adhesion2: f32,
-    pub adhesion3: f32,
-    pub adhesion4: f32,
-    pub adhesion5: f32,
-    pub adhesion6: f32,
-    pub adhesion7: f32,
-    pub adhesion8: f32,
-    pub adhesion9: f32,
-    // Adhesion settings checkboxes
-    pub adhesion_can_break: bool,
-    pub enable_twist_constraint: bool,
-    // Quaternion ball mode selections
-    pub qball1_mode: usize,
-    pub qball2_mode: usize,
-    pub qball1_keep_adhesion: bool,
-    pub qball2_keep_adhesion: bool,
-    // Parent settings sliders
-    pub parent1: f32,
-    pub parent2: f32,
-    pub parent3: f32,
-    pub parent4: f32,
-    pub parent5: f32,
-    pub parent6: f32,
-    // Parent settings checkboxes
-    pub prioritize_when_low: bool,
+    // UI state for quaternion balls
+    pub qball_snapping: bool,
+    pub qball1_locked_axis: i32,
+    pub qball1_initial_distance: f32,
+    pub qball2_locked_axis: i32,
+    pub qball2_initial_distance: f32,
+    // UI state for circular sliders
+    pub enable_snapping: bool,
     // Time slider
     pub time_value: f32,
 }
 
 impl Default for WidgetDemoState {
     fn default() -> Self {
+        let mut modes = Vec::new();
+        let colors = vec![
+            egui::Color32::from_rgb(255, 100, 100),
+            egui::Color32::from_rgb(100, 255, 100),
+            egui::Color32::from_rgb(100, 100, 255),
+            egui::Color32::from_rgb(255, 255, 100),
+            egui::Color32::from_rgb(255, 100, 255),
+            egui::Color32::from_rgb(100, 255, 255),
+            egui::Color32::from_rgb(200, 150, 100),
+            egui::Color32::from_rgb(150, 100, 200),
+        ];
+        
+        for (i, color) in colors.iter().enumerate() {
+            let mut mode = ModeData::default();
+            mode.name = format!("M {}", i);
+            mode.color = *color;
+            mode.child_a_mode = i;
+            mode.child_b_mode = i;
+            modes.push(mode);
+        }
+        
         Self {
-            angle1: 0.0,
-            angle2: 45.0,
-            enable_snapping: true,
-            orientation: Quat::IDENTITY,
-            qball_snapping: true,
-            qball_locked_axis: -1,
-            qball_initial_distance: 0.0,
-            // All axes start at their own (0, 0) coordinates
-            x_axis_lat: 0.0,
-            x_axis_lon: 0.0,
-            y_axis_lat: 0.0,
-            y_axis_lon: 0.0,
-            z_axis_lat: 0.0,
-            z_axis_lon: 0.0,
-            // Second ball
-            orientation2: Quat::IDENTITY,
-            qball2_locked_axis: -1,
-            qball2_initial_distance: 0.0,
-            x_axis_lat2: 0.0,
-            x_axis_lon2: 0.0,
-            y_axis_lat2: 0.0,
-            y_axis_lon2: 0.0,
-            z_axis_lat2: 0.0,
-            z_axis_lon2: 0.0,
-            // Modes
-            modes_data: vec![
-                ("M 0".to_string(), egui::Color32::from_rgb(255, 100, 100)),
-                ("M 1".to_string(), egui::Color32::from_rgb(100, 255, 100)),
-                ("M 2".to_string(), egui::Color32::from_rgb(100, 100, 255)),
-                ("M 3".to_string(), egui::Color32::from_rgb(255, 255, 100)),
-                ("M 4".to_string(), egui::Color32::from_rgb(255, 100, 255)),
-                ("M 5".to_string(), egui::Color32::from_rgb(100, 255, 255)),
-                ("M 6".to_string(), egui::Color32::from_rgb(200, 150, 100)),
-                ("M 7".to_string(), egui::Color32::from_rgb(150, 100, 200)),
-            ],
+            genome_name: String::new(),
+            modes_data: modes,
             selected_mode: 0,
             initial_mode: 0,
             renaming_mode: None,
@@ -127,37 +171,12 @@ impl Default for WidgetDemoState {
             copy_into_dialog_open: false,
             copy_into_source: 0,
             color_picker_state: None,
-            // Chemical editor
-            chemical_type: 0,
-            make_adhesion: false,
-            genome_name: String::new(),
-            // Adhesion settings
-            adhesion1: 10.0,  // Break Force (0.1-100.0, default 10.0)
-            adhesion2: 2.0,   // Rest Length (0.5-5.0, default 2.0)
-            adhesion3: 50.0,  // Linear Spring Stiffness (0.1-500.0, default 50.0)
-            adhesion4: 1.0,   // Linear Spring Damping (0.0-10.0, default 1.0)
-            adhesion5: 10.0,  // Angular Spring Stiffness (0.1-100.0, default 10.0)
-            adhesion6: 1.0,   // Angular Spring Damping (0.0-10.0, default 1.0)
-            adhesion7: 0.0,   // Max Angular Deviation (0.0-180.0, default 0.0 = no limit)
-            adhesion8: 0.5,   // Twist Constraint Stiffness (0.0-2.0, default 0.5)
-            adhesion9: 1.0,   // Twist Constraint Damping (0.0-10.0, default 1.0)
-            adhesion_can_break: true,
-            enable_twist_constraint: false,
-            // Quaternion ball modes
-            qball1_mode: 0,
-            qball2_mode: 0,
-            qball1_keep_adhesion: false,
-            qball2_keep_adhesion: false,
-            // Parent settings
-            parent1: 1.5,  // Split Mass (1.0-3.0, default 1.5)
-            parent2: 5.0,  // Split Interval (1.0-60.0s, default 5.0s)
-            parent3: 1.0,  // Nutrient Priority (0.1-10.0, default 1.0)
-            parent4: 20.0, // Max Connections (0-20, default 20)
-            parent5: 0.0,  // Min Connections (0-20, default 0)
-            parent6: -1.0, // Max Splits (-1 to 20, default -1 = infinite)
-            // Parent settings checkboxes
-            prioritize_when_low: true,
-            // Time slider
+            qball_snapping: true,
+            qball1_locked_axis: -1,
+            qball1_initial_distance: 0.0,
+            qball2_locked_axis: -1,
+            qball2_initial_distance: 0.0,
+            enable_snapping: true,
             time_value: 0.0,
         }
     }
@@ -288,6 +307,9 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                     ui.checkbox(&mut self.widget_demo_state.enable_snapping, "Enable Snapping (11.25°)");
                     ui.add_space(10.0);
                     
+                    // Get current mode
+                    let mode = &mut self.widget_demo_state.modes_data[self.widget_demo_state.selected_mode];
+                    
                     // Calculate available space and size for two sliders
                     let _available_width = ui.available_width();
                     let radius = 29.25;
@@ -300,7 +322,7 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                             ui.label("Pitch:");
                             widgets::circular_slider_float(
                                 ui,
-                                &mut self.widget_demo_state.angle1,
+                                &mut mode.split_angle_pitch,
                                 -180.0,
                                 180.0,
                                 radius,
@@ -312,7 +334,7 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                             ui.label("Yaw:");
                             widgets::circular_slider_float(
                                 ui,
-                                &mut self.widget_demo_state.angle2,
+                                &mut mode.split_angle_yaw,
                                 -180.0,
                                 180.0,
                                 radius,
@@ -342,39 +364,53 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                     let max_size = ball_width.min(usable_height);
                     let ball_radius = (max_size / 2.5).max(32.5).min(130.0);
                     
+                    let ball_container_width = ball_radius * 2.0 + 20.0;
+                    
+                    // Get current mode index
+                    let selected_mode_idx = self.widget_demo_state.selected_mode;
+                    
+                    // Collect mode display data before mutable borrows
+                    let mode_display_data: Vec<(String, egui::Color32)> = self.widget_demo_state.modes_data.iter()
+                        .map(|m| (m.name.clone(), m.color))
+                        .collect();
+                    
                     // Display balls horizontally with coordinates directly below each ball
                     ui.horizontal_top(|ui| {
                         ui.add_space(10.0);
                         
-                        let ball_container_width = ball_radius * 2.0 + 20.0; // Fixed width for each ball container
-                        
-                        // Ball 1 with coordinates below
+                        // Ball 1 (Child A) with mode dropdown below
                         ui.allocate_ui_with_layout(
                             egui::vec2(ball_container_width, 0.0),
                             egui::Layout::top_down(egui::Align::Center),
                             |ui| {
+                                ui.label("Child A");
+                                
+                                let mode = &mut self.widget_demo_state.modes_data[selected_mode_idx];
+                                
                                 widgets::quaternion_ball(
                                     ui,
-                                    &mut self.widget_demo_state.orientation,
-                                    &mut self.widget_demo_state.x_axis_lat,
-                                    &mut self.widget_demo_state.x_axis_lon,
-                                    &mut self.widget_demo_state.y_axis_lat,
-                                    &mut self.widget_demo_state.y_axis_lon,
-                                    &mut self.widget_demo_state.z_axis_lat,
-                                    &mut self.widget_demo_state.z_axis_lon,
+                                    &mut mode.child_a_orientation,
+                                    &mut mode.child_a_x_lat,
+                                    &mut mode.child_a_x_lon,
+                                    &mut mode.child_a_y_lat,
+                                    &mut mode.child_a_y_lon,
+                                    &mut mode.child_a_z_lat,
+                                    &mut mode.child_a_z_lon,
                                     ball_radius,
                                     self.widget_demo_state.qball_snapping,
-                                    &mut self.widget_demo_state.qball_locked_axis,
-                                    &mut self.widget_demo_state.qball_initial_distance,
+                                    &mut self.widget_demo_state.qball1_locked_axis,
+                                    &mut self.widget_demo_state.qball1_initial_distance,
                                 );
                                 
                                 ui.add_space(5.0);
                                 
                                 // Keep Adhesion checkbox for ball 1
-                                ui.checkbox(&mut self.widget_demo_state.qball1_keep_adhesion, "Keep Adhesion");
+                                ui.checkbox(&mut mode.child_a_keep_adhesion, "Keep Adhesion");
                                 
-                                // Mode dropdown for ball 1
-                                let mode_color = self.widget_demo_state.modes_data[self.widget_demo_state.qball1_mode].1;
+                                // Mode label and dropdown for ball 1
+                                ui.label("Mode:");
+                                let child_a_mode_idx = mode.child_a_mode;
+                                let mode_color = mode_display_data[child_a_mode_idx].1;
                                 let brightness = mode_color.r() as f32 * 0.299 + mode_color.g() as f32 * 0.587 + mode_color.b() as f32 * 0.114;
                                 let text_color = if brightness > 127.5 {
                                     egui::Color32::BLACK
@@ -383,45 +419,49 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                                 };
                                 egui::ComboBox::from_id_salt("qball1_mode")
                                     .selected_text(
-                                        egui::RichText::new(&self.widget_demo_state.modes_data[self.widget_demo_state.qball1_mode].0)
+                                        egui::RichText::new(&mode_display_data[child_a_mode_idx].0)
                                             .color(text_color)
                                             .background_color(mode_color)
                                     )
-                                    .width(80.0)
+                                    .width(ball_container_width - 20.0)
                                     .show_ui(ui, |ui| {
-                                        for (i, (mode_name, color)) in self.widget_demo_state.modes_data.iter().enumerate() {
+                                        for (i, (mode_name, mode_color)) in mode_display_data.iter().enumerate() {
                                             // Calculate brightness to determine text color
-                                            let brightness = color.r() as f32 * 0.299 + color.g() as f32 * 0.587 + color.b() as f32 * 0.114;
+                                            let brightness = mode_color.r() as f32 * 0.299 + mode_color.g() as f32 * 0.587 + mode_color.b() as f32 * 0.114;
                                             let text_color = if brightness > 127.5 {
-                                                egui::Color32::BLACK  // Black text for light backgrounds
+                                                egui::Color32::BLACK
                                             } else {
-                                                egui::Color32::WHITE  // White text for dark backgrounds
+                                                egui::Color32::WHITE
                                             };
 
                                             let _response = ui.selectable_value(
-                                                &mut self.widget_demo_state.qball1_mode,
+                                                &mut mode.child_a_mode,
                                                 i,
-                                                egui::RichText::new(mode_name).color(text_color).background_color(*color)
+                                                egui::RichText::new(mode_name).color(text_color).background_color(*mode_color)
                                             );
                                         }
                                     });
                             }
                         );
                         
-                        // Ball 2 with mode dropdown below
+                        // Ball 2 (Child B) with mode dropdown below
                         ui.allocate_ui_with_layout(
                             egui::vec2(ball_container_width, 0.0),
                             egui::Layout::top_down(egui::Align::Center),
                             |ui| {
+                                ui.label("Child B");
+                                
+                                let mode = &mut self.widget_demo_state.modes_data[selected_mode_idx];
+                                
                                 widgets::quaternion_ball(
                                     ui,
-                                    &mut self.widget_demo_state.orientation2,
-                                    &mut self.widget_demo_state.x_axis_lat2,
-                                    &mut self.widget_demo_state.x_axis_lon2,
-                                    &mut self.widget_demo_state.y_axis_lat2,
-                                    &mut self.widget_demo_state.y_axis_lon2,
-                                    &mut self.widget_demo_state.z_axis_lat2,
-                                    &mut self.widget_demo_state.z_axis_lon2,
+                                    &mut mode.child_b_orientation,
+                                    &mut mode.child_b_x_lat,
+                                    &mut mode.child_b_x_lon,
+                                    &mut mode.child_b_y_lat,
+                                    &mut mode.child_b_y_lon,
+                                    &mut mode.child_b_z_lat,
+                                    &mut mode.child_b_z_lon,
                                     ball_radius,
                                     self.widget_demo_state.qball_snapping,
                                     &mut self.widget_demo_state.qball2_locked_axis,
@@ -431,10 +471,12 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                                 ui.add_space(5.0);
                                 
                                 // Keep Adhesion checkbox for ball 2
-                                ui.checkbox(&mut self.widget_demo_state.qball2_keep_adhesion, "Keep Adhesion");
+                                ui.checkbox(&mut mode.child_b_keep_adhesion, "Keep Adhesion");
                                 
-                                // Mode dropdown for ball 2
-                                let mode_color = self.widget_demo_state.modes_data[self.widget_demo_state.qball2_mode].1;
+                                // Mode label and dropdown for ball 2
+                                ui.label("Mode:");
+                                let child_b_mode_idx = mode.child_b_mode;
+                                let mode_color = mode_display_data[child_b_mode_idx].1;
                                 let brightness = mode_color.r() as f32 * 0.299 + mode_color.g() as f32 * 0.587 + mode_color.b() as f32 * 0.114;
                                 let text_color = if brightness > 127.5 {
                                     egui::Color32::BLACK
@@ -443,25 +485,25 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                                 };
                                 egui::ComboBox::from_id_salt("qball2_mode")
                                     .selected_text(
-                                        egui::RichText::new(&self.widget_demo_state.modes_data[self.widget_demo_state.qball2_mode].0)
+                                        egui::RichText::new(&mode_display_data[child_b_mode_idx].0)
                                             .color(text_color)
                                             .background_color(mode_color)
                                     )
-                                    .width(80.0)
+                                    .width(ball_container_width - 20.0)
                                     .show_ui(ui, |ui| {
-                                        for (i, (mode_name, color)) in self.widget_demo_state.modes_data.iter().enumerate() {
+                                        for (i, (mode_name, mode_color)) in mode_display_data.iter().enumerate() {
                                             // Calculate brightness to determine text color
-                                            let brightness = color.r() as f32 * 0.299 + color.g() as f32 * 0.587 + color.b() as f32 * 0.114;
+                                            let brightness = mode_color.r() as f32 * 0.299 + mode_color.g() as f32 * 0.587 + mode_color.b() as f32 * 0.114;
                                             let text_color = if brightness > 127.5 {
-                                                egui::Color32::BLACK  // Black text for light backgrounds
+                                                egui::Color32::BLACK
                                             } else {
-                                                egui::Color32::WHITE  // White text for dark backgrounds
+                                                egui::Color32::WHITE
                                             };
 
                                             let _response = ui.selectable_value(
-                                                &mut self.widget_demo_state.qball2_mode,
+                                                &mut mode.child_b_mode,
                                                 i,
-                                                egui::RichText::new(mode_name).color(text_color).background_color(*color)
+                                                egui::RichText::new(mode_name).color(text_color).background_color(*mode_color)
                                             );
                                         }
                                     });
@@ -482,10 +524,25 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                     // Three buttons at the top
                     ui.horizontal(|ui| {
                         if ui.button("Save Genome").clicked() {
-                            // TODO: Implement save genome
+                            // Open save dialog
+                            if let Some(path) = rfd::FileDialog::new()
+                                .add_filter("JSON", &["json"])
+                                .set_file_name(&format!("{}.json", self.widget_demo_state.genome_name))
+                                .save_file()
+                            {
+                                info!("Would save genome to: {:?}", path);
+                                // TODO: Implement actual save
+                            }
                         }
                         if ui.button("Load Genome").clicked() {
-                            // TODO: Implement load genome
+                            // Open load dialog
+                            if let Some(path) = rfd::FileDialog::new()
+                                .add_filter("JSON", &["json"])
+                                .pick_file()
+                            {
+                                info!("Would load genome from: {:?}", path);
+                                // TODO: Implement actual load
+                            }
                         }
                         if ui.button("Genome Graph").clicked() {
                             // TODO: Implement genome graph
@@ -502,19 +559,22 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                     
                     ui.add_space(4.0);
                     
+                    // Get current mode
+                    let mode = &mut self.widget_demo_state.modes_data[self.widget_demo_state.selected_mode];
+                    
                     // Type dropdown and checkbox on the same line
                     ui.horizontal(|ui| {
                         ui.label("Type:");
                         let cell_types = ["Photocyte", "Phagocyte", "Flagellocyte", "Devorocyte", "Lipocyte"];
                         egui::ComboBox::from_id_salt("cell_type")
-                            .selected_text(cell_types[self.widget_demo_state.chemical_type])
+                            .selected_text(cell_types[mode.cell_type])
                             .show_ui(ui, |ui| {
                                 for (i, type_name) in cell_types.iter().enumerate() {
-                                    ui.selectable_value(&mut self.widget_demo_state.chemical_type, i, *type_name);
+                                    ui.selectable_value(&mut mode.cell_type, i, *type_name);
                                 }
                             });
                         
-                        ui.checkbox(&mut self.widget_demo_state.make_adhesion, "Make Adhesion");
+                        ui.checkbox(&mut mode.make_adhesion, "Make Adhesion");
                     });
                 });
             }
@@ -526,8 +586,11 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                     ui.set_width(ui.available_width());
                     ui.add_space(10.0);
                     
+                    // Get current mode
+                    let mode = &mut self.widget_demo_state.modes_data[self.widget_demo_state.selected_mode];
+                    
                     // Adhesion Can Break checkbox
-                    ui.checkbox(&mut self.widget_demo_state.adhesion_can_break, "Adhesion Can Break");
+                    ui.checkbox(&mut mode.adhesion_can_break, "Adhesion Can Break");
                     
                     // Adhesion Break Force (0.1 to 100.0)
                     ui.label("Adhesion Break Force:");
@@ -535,8 +598,8 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                         let available = ui.available_width();
                         let slider_width = if available > 80.0 { available - 70.0 } else { 50.0 };
                         ui.style_mut().spacing.slider_width = slider_width;
-                        ui.add(egui::Slider::new(&mut self.widget_demo_state.adhesion1, 0.1..=100.0).show_value(false));
-                        ui.add(egui::DragValue::new(&mut self.widget_demo_state.adhesion1).speed(0.1).range(0.1..=100.0));
+                        ui.add(egui::Slider::new(&mut mode.adhesion_break_force, 0.1..=100.0).show_value(false));
+                        ui.add(egui::DragValue::new(&mut mode.adhesion_break_force).speed(0.1).range(0.1..=100.0));
                     });
                     
                     // Adhesion Rest Length (0.5 to 5.0)
@@ -545,8 +608,8 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                         let available = ui.available_width();
                         let slider_width = if available > 80.0 { available - 70.0 } else { 50.0 };
                         ui.style_mut().spacing.slider_width = slider_width;
-                        ui.add(egui::Slider::new(&mut self.widget_demo_state.adhesion2, 0.5..=5.0).show_value(false));
-                        ui.add(egui::DragValue::new(&mut self.widget_demo_state.adhesion2).speed(0.01).range(0.5..=5.0));
+                        ui.add(egui::Slider::new(&mut mode.adhesion_rest_length, 0.5..=5.0).show_value(false));
+                        ui.add(egui::DragValue::new(&mut mode.adhesion_rest_length).speed(0.01).range(0.5..=5.0));
                     });
                     
                     // Linear Spring Stiffness (0.1 to 500.0)
@@ -555,8 +618,8 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                         let available = ui.available_width();
                         let slider_width = if available > 80.0 { available - 70.0 } else { 50.0 };
                         ui.style_mut().spacing.slider_width = slider_width;
-                        ui.add(egui::Slider::new(&mut self.widget_demo_state.adhesion3, 0.1..=500.0).show_value(false));
-                        ui.add(egui::DragValue::new(&mut self.widget_demo_state.adhesion3).speed(0.1).range(0.1..=500.0));
+                        ui.add(egui::Slider::new(&mut mode.linear_spring_stiffness, 0.1..=500.0).show_value(false));
+                        ui.add(egui::DragValue::new(&mut mode.linear_spring_stiffness).speed(0.1).range(0.1..=500.0));
                     });
                     
                     // Linear Spring Damping (0.0 to 10.0)
@@ -565,8 +628,8 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                         let available = ui.available_width();
                         let slider_width = if available > 80.0 { available - 70.0 } else { 50.0 };
                         ui.style_mut().spacing.slider_width = slider_width;
-                        ui.add(egui::Slider::new(&mut self.widget_demo_state.adhesion4, 0.0..=10.0).show_value(false));
-                        ui.add(egui::DragValue::new(&mut self.widget_demo_state.adhesion4).speed(0.01).range(0.0..=10.0));
+                        ui.add(egui::Slider::new(&mut mode.linear_spring_damping, 0.0..=10.0).show_value(false));
+                        ui.add(egui::DragValue::new(&mut mode.linear_spring_damping).speed(0.01).range(0.0..=10.0));
                     });
                     
                     // Angular Spring Stiffness (0.1 to 100.0)
@@ -575,8 +638,8 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                         let available = ui.available_width();
                         let slider_width = if available > 80.0 { available - 70.0 } else { 50.0 };
                         ui.style_mut().spacing.slider_width = slider_width;
-                        ui.add(egui::Slider::new(&mut self.widget_demo_state.adhesion5, 0.1..=100.0).show_value(false));
-                        ui.add(egui::DragValue::new(&mut self.widget_demo_state.adhesion5).speed(0.1).range(0.1..=100.0));
+                        ui.add(egui::Slider::new(&mut mode.angular_spring_stiffness, 0.1..=100.0).show_value(false));
+                        ui.add(egui::DragValue::new(&mut mode.angular_spring_stiffness).speed(0.1).range(0.1..=100.0));
                     });
                     
                     // Angular Spring Damping (0.0 to 10.0)
@@ -585,8 +648,8 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                         let available = ui.available_width();
                         let slider_width = if available > 80.0 { available - 70.0 } else { 50.0 };
                         ui.style_mut().spacing.slider_width = slider_width;
-                        ui.add(egui::Slider::new(&mut self.widget_demo_state.adhesion6, 0.0..=10.0).show_value(false));
-                        ui.add(egui::DragValue::new(&mut self.widget_demo_state.adhesion6).speed(0.01).range(0.0..=10.0));
+                        ui.add(egui::Slider::new(&mut mode.angular_spring_damping, 0.0..=10.0).show_value(false));
+                        ui.add(egui::DragValue::new(&mut mode.angular_spring_damping).speed(0.01).range(0.0..=10.0));
                     });
                     
                     // Max Angular Deviation (0.0 to 180.0)
@@ -595,14 +658,14 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                         let available = ui.available_width();
                         let slider_width = if available > 80.0 { available - 70.0 } else { 50.0 };
                         ui.style_mut().spacing.slider_width = slider_width;
-                        ui.add(egui::Slider::new(&mut self.widget_demo_state.adhesion7, 0.0..=180.0).show_value(false));
-                        ui.add(egui::DragValue::new(&mut self.widget_demo_state.adhesion7).speed(0.1).range(0.0..=180.0));
+                        ui.add(egui::Slider::new(&mut mode.max_angular_deviation, 0.0..=180.0).show_value(false));
+                        ui.add(egui::DragValue::new(&mut mode.max_angular_deviation).speed(0.1).range(0.0..=180.0));
                     });
                     
                     ui.add_space(10.0);
                     
                     // Enable Twist Constraint checkbox
-                    ui.checkbox(&mut self.widget_demo_state.enable_twist_constraint, "Enable Twist Constraint");
+                    ui.checkbox(&mut mode.enable_twist_constraint, "Enable Twist Constraint");
                     
                     // Twist Constraint Stiffness (0.0 to 2.0)
                     ui.label("Twist Constraint Stiffness:");
@@ -610,8 +673,8 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                         let available = ui.available_width();
                         let slider_width = if available > 80.0 { available - 70.0 } else { 50.0 };
                         ui.style_mut().spacing.slider_width = slider_width;
-                        ui.add(egui::Slider::new(&mut self.widget_demo_state.adhesion8, 0.0..=2.0).show_value(false));
-                        ui.add(egui::DragValue::new(&mut self.widget_demo_state.adhesion8).speed(0.01).range(0.0..=2.0));
+                        ui.add(egui::Slider::new(&mut mode.twist_constraint_stiffness, 0.0..=2.0).show_value(false));
+                        ui.add(egui::DragValue::new(&mut mode.twist_constraint_stiffness).speed(0.01).range(0.0..=2.0));
                     });
                     
                     // Twist Constraint Damping (0.0 to 10.0)
@@ -620,8 +683,8 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                         let available = ui.available_width();
                         let slider_width = if available > 80.0 { available - 70.0 } else { 50.0 };
                         ui.style_mut().spacing.slider_width = slider_width;
-                        ui.add(egui::Slider::new(&mut self.widget_demo_state.adhesion9, 0.0..=10.0).show_value(false));
-                        ui.add(egui::DragValue::new(&mut self.widget_demo_state.adhesion9).speed(0.01).range(0.0..=10.0));
+                        ui.add(egui::Slider::new(&mut mode.twist_constraint_damping, 0.0..=10.0).show_value(false));
+                        ui.add(egui::DragValue::new(&mut mode.twist_constraint_damping).speed(0.01).range(0.0..=10.0));
                     });
                 });
             }
@@ -633,14 +696,17 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                     ui.set_width(ui.available_width());
                     ui.add_space(10.0);
                     
+                    // Get current mode
+                    let mode = &mut self.widget_demo_state.modes_data[self.widget_demo_state.selected_mode];
+                    
                     // Split Mass (1.0 to 3.0)
                     ui.label("Split Mass:");
                     ui.horizontal(|ui| {
                         let available = ui.available_width();
                         let slider_width = if available > 80.0 { available - 70.0 } else { 50.0 };
                         ui.style_mut().spacing.slider_width = slider_width;
-                        ui.add(egui::Slider::new(&mut self.widget_demo_state.parent1, 1.0..=3.0).show_value(false));
-                        ui.add(egui::DragValue::new(&mut self.widget_demo_state.parent1).speed(0.01).range(1.0..=3.0));
+                        ui.add(egui::Slider::new(&mut mode.split_mass, 1.0..=3.0).show_value(false));
+                        ui.add(egui::DragValue::new(&mut mode.split_mass).speed(0.01).range(1.0..=3.0));
                     });
                     
                     // Split Interval (1.0 to 60.0 seconds)
@@ -649,8 +715,8 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                         let available = ui.available_width();
                         let slider_width = if available > 80.0 { available - 70.0 } else { 50.0 };
                         ui.style_mut().spacing.slider_width = slider_width;
-                        ui.add(egui::Slider::new(&mut self.widget_demo_state.parent2, 1.0..=60.0).show_value(false));
-                        ui.add(egui::DragValue::new(&mut self.widget_demo_state.parent2).speed(0.1).range(1.0..=60.0).suffix("s"));
+                        ui.add(egui::Slider::new(&mut mode.split_interval, 1.0..=60.0).show_value(false));
+                        ui.add(egui::DragValue::new(&mut mode.split_interval).speed(0.1).range(1.0..=60.0).suffix("s"));
                     });
                     
                     // Nutrient Priority (0.1 to 10.0)
@@ -659,12 +725,12 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                         let available = ui.available_width();
                         let slider_width = if available > 80.0 { available - 70.0 } else { 50.0 };
                         ui.style_mut().spacing.slider_width = slider_width;
-                        ui.add(egui::Slider::new(&mut self.widget_demo_state.parent3, 0.1..=10.0).show_value(false));
-                        ui.add(egui::DragValue::new(&mut self.widget_demo_state.parent3).speed(0.01).range(0.1..=10.0));
+                        ui.add(egui::Slider::new(&mut mode.nutrient_priority, 0.1..=10.0).show_value(false));
+                        ui.add(egui::DragValue::new(&mut mode.nutrient_priority).speed(0.01).range(0.1..=10.0));
                     });
                     
                     // Prioritize When Low checkbox
-                    ui.checkbox(&mut self.widget_demo_state.prioritize_when_low, "Prioritize When Low");
+                    ui.checkbox(&mut mode.prioritize_when_low, "Prioritize When Low");
                     
                     ui.add_space(10.0);
                     
@@ -674,8 +740,8 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                         let available = ui.available_width();
                         let slider_width = if available > 80.0 { available - 70.0 } else { 50.0 };
                         ui.style_mut().spacing.slider_width = slider_width;
-                        ui.add(egui::Slider::new(&mut self.widget_demo_state.parent4, 0.0..=20.0).show_value(false));
-                        ui.add(egui::DragValue::new(&mut self.widget_demo_state.parent4).speed(0.1).range(0.0..=20.0));
+                        ui.add(egui::Slider::new(&mut mode.max_connections, 0.0..=20.0).show_value(false));
+                        ui.add(egui::DragValue::new(&mut mode.max_connections).speed(0.1).range(0.0..=20.0));
                     });
                     
                     // Min Connections (0 to 20)
@@ -684,8 +750,8 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                         let available = ui.available_width();
                         let slider_width = if available > 80.0 { available - 70.0 } else { 50.0 };
                         ui.style_mut().spacing.slider_width = slider_width;
-                        ui.add(egui::Slider::new(&mut self.widget_demo_state.parent5, 0.0..=20.0).show_value(false));
-                        ui.add(egui::DragValue::new(&mut self.widget_demo_state.parent5).speed(0.1).range(0.0..=20.0));
+                        ui.add(egui::Slider::new(&mut mode.min_connections, 0.0..=20.0).show_value(false));
+                        ui.add(egui::DragValue::new(&mut mode.min_connections).speed(0.1).range(0.0..=20.0));
                     });
                     
                     // Max Splits (-1 to 20, where -1 = infinite)
@@ -694,8 +760,8 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                         let available = ui.available_width();
                         let slider_width = if available > 80.0 { available - 70.0 } else { 50.0 };
                         ui.style_mut().spacing.slider_width = slider_width;
-                        ui.add(egui::Slider::new(&mut self.widget_demo_state.parent6, -1.0..=20.0).show_value(false));
-                        ui.add(egui::DragValue::new(&mut self.widget_demo_state.parent6).speed(0.1).range(-1.0..=20.0));
+                        ui.add(egui::Slider::new(&mut mode.max_splits, -1.0..=20.0).show_value(false));
+                        ui.add(egui::DragValue::new(&mut mode.max_splits).speed(0.1).range(-1.0..=20.0));
                     });
                 });
             }
@@ -797,7 +863,7 @@ fn render_modes_panel(ui: &mut egui::Ui, widget_demo_state: &mut WidgetDemoState
         if let Some(_rename_idx) = widget_demo_state.renaming_mode {
             let trimmed = widget_demo_state.rename_buffer.trim();
             if !trimmed.is_empty() && _rename_idx < widget_demo_state.modes_data.len() {
-                widget_demo_state.modes_data[_rename_idx].0 = trimmed.to_string();
+                widget_demo_state.modes_data[_rename_idx].name = trimmed.to_string();
                 info!("Renamed mode {} to {}", _rename_idx, trimmed);
             }
         }
@@ -826,6 +892,11 @@ fn render_modes_panel(ui: &mut egui::Ui, widget_demo_state: &mut WidgetDemoState
         ui.add_space(5.0);
     }
 
+    // Convert modes_data to the format expected by modes_list_items
+    let modes_display: Vec<(String, egui::Color32)> = widget_demo_state.modes_data.iter()
+        .map(|m| (m.name.clone(), m.color))
+        .collect();
+
     // Now create scroll area for the list
     let (selection_changed, initial_changed, rename_idx, color_change) = egui::ScrollArea::vertical()
         .auto_shrink([false, false])
@@ -834,7 +905,7 @@ fn render_modes_panel(ui: &mut egui::Ui, widget_demo_state: &mut WidgetDemoState
 
         widgets::modes_list_items(
             ui,
-            &widget_demo_state.modes_data,
+            &modes_display,
             &mut widget_demo_state.selected_mode,
             &mut widget_demo_state.initial_mode,
             available_width,
@@ -851,9 +922,11 @@ fn render_modes_panel(ui: &mut egui::Ui, widget_demo_state: &mut WidgetDemoState
 
             if source_idx != target_idx && source_idx < widget_demo_state.modes_data.len()
                 && target_idx < widget_demo_state.modes_data.len() {
-                // Copy the color from source to target
-                let source_color = widget_demo_state.modes_data[source_idx].1;
-                widget_demo_state.modes_data[target_idx].1 = source_color;
+                // Copy all settings from source to target (except name)
+                let source_mode = widget_demo_state.modes_data[source_idx].clone();
+                let target_name = widget_demo_state.modes_data[target_idx].name.clone();
+                widget_demo_state.modes_data[target_idx] = source_mode;
+                widget_demo_state.modes_data[target_idx].name = target_name;
                 info!("Copied mode {} into mode {}", source_idx, target_idx);
             }
 
@@ -870,13 +943,13 @@ fn render_modes_panel(ui: &mut egui::Ui, widget_demo_state: &mut WidgetDemoState
     // Handle rename request
     if let Some(idx) = rename_idx {
         widget_demo_state.renaming_mode = Some(idx);
-        widget_demo_state.rename_buffer = widget_demo_state.modes_data[idx].0.clone();
+        widget_demo_state.rename_buffer = widget_demo_state.modes_data[idx].name.clone();
     }
 
     // Handle color change from context menu color picker
     if let Some((idx, new_color)) = color_change {
         if idx < widget_demo_state.modes_data.len() {
-            widget_demo_state.modes_data[idx].1 = new_color;
+            widget_demo_state.modes_data[idx].color = new_color;
             info!("Changed color of mode {}", idx);
         }
     }
@@ -888,15 +961,15 @@ fn render_modes_panel(ui: &mut egui::Ui, widget_demo_state: &mut WidgetDemoState
             let insert_idx = selected_idx + 1;
 
             // Copy the selected mode
-            let (name, color) = widget_demo_state.modes_data[selected_idx].clone();
+            let mut new_mode = widget_demo_state.modes_data[selected_idx].clone();
 
             // Generate new name
             let existing_names: Vec<String> = widget_demo_state.modes_data.iter()
-                .map(|(n, _)| n.clone())
+                .map(|m| m.name.clone())
                 .collect();
-            let new_name = widgets::generate_next_mode_name(&name, &existing_names);
+            new_mode.name = widgets::generate_next_mode_name(&new_mode.name, &existing_names);
 
-            widget_demo_state.modes_data.insert(insert_idx, (new_name, color));
+            widget_demo_state.modes_data.insert(insert_idx, new_mode);
 
             // Adjust selection to the new copy
             widget_demo_state.selected_mode = insert_idx;
@@ -924,22 +997,15 @@ fn render_modes_panel(ui: &mut egui::Ui, widget_demo_state: &mut WidgetDemoState
     if reset_clicked {
         let selected_idx = widget_demo_state.selected_mode;
         if selected_idx < widget_demo_state.modes_data.len() {
-            // Generate a new random color for the selected mode
-            let mut hasher = RandomState::new().build_hasher();
-            selected_idx.hash(&mut hasher);
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-                .hash(&mut hasher);
-            let hash = hasher.finish();
-            let new_color = egui::Color32::from_rgb(
-                ((hash % 156) + 100) as u8,
-                (((hash >> 8) % 156) + 100) as u8,
-                (((hash >> 16) % 156) + 100) as u8,
-            );
-            widget_demo_state.modes_data[selected_idx].1 = new_color;
-            info!("Reset mode {} color", selected_idx);
+            // Reset to default values
+            let name = widget_demo_state.modes_data[selected_idx].name.clone();
+            let color = widget_demo_state.modes_data[selected_idx].color;
+            widget_demo_state.modes_data[selected_idx] = ModeData::default();
+            widget_demo_state.modes_data[selected_idx].name = name;
+            widget_demo_state.modes_data[selected_idx].color = color;
+            widget_demo_state.modes_data[selected_idx].child_a_mode = selected_idx;
+            widget_demo_state.modes_data[selected_idx].child_b_mode = selected_idx;
+            info!("Reset mode {}", selected_idx);
         }
     }
 
@@ -959,10 +1025,10 @@ fn render_modes_panel(ui: &mut egui::Ui, widget_demo_state: &mut WidgetDemoState
 
         // Generate new mode name
         let existing_names: Vec<String> = widget_demo_state.modes_data.iter()
-            .map(|(name, _)| name.clone())
+            .map(|m| m.name.clone())
             .collect();
         let base_name = if selected_idx < widget_demo_state.modes_data.len() {
-            &widget_demo_state.modes_data[selected_idx].0
+            &widget_demo_state.modes_data[selected_idx].name
         } else {
             "M 0"
         };
@@ -978,7 +1044,13 @@ fn render_modes_panel(ui: &mut egui::Ui, widget_demo_state: &mut WidgetDemoState
             (((hash >> 16) % 156) + 100) as u8,
         );
 
-        widget_demo_state.modes_data.insert(insert_idx, (new_name, new_color));
+        let mut new_mode = ModeData::default();
+        new_mode.name = new_name;
+        new_mode.color = new_color;
+        new_mode.child_a_mode = insert_idx;
+        new_mode.child_b_mode = insert_idx;
+
+        widget_demo_state.modes_data.insert(insert_idx, new_mode);
 
         // Adjust selection if needed
         if insert_idx <= selected_idx {
