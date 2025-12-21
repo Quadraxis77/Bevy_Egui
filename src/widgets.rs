@@ -870,6 +870,7 @@ pub fn modes_list_items(
 /// - Adding after M 0.1 when M 0.2 doesn't exist -> M 0.2
 /// - Adding between M 1 and M 1.1 -> M 1.0.1
 /// - Adding between M 0 and M 0.1 -> M 0.0.1
+/// - Adding between M 0 and M 0.0.0.1 -> M 0.0.1
 pub fn generate_next_mode_name(base_name: &str, existing_names: &[String]) -> String {
     // Helper to check if a name is already used
     let is_name_taken = |candidate: &str| {
@@ -897,15 +898,20 @@ pub fn generate_next_mode_name(base_name: &str, existing_names: &[String]) -> St
     
     // Check if current mode has children - if so, we need to insert at intermediate level
     if has_children(number_part) {
-        let intermediate = format!("M {}.0.1", number_part);
-        if !is_name_taken(&intermediate) {
-            return intermediate;
+        // Try progressively deeper intermediate levels
+        // M 0 with child M 0.0.0.1 should try: M 0.1, M 0.0.1, M 0.0.0.1 (taken), M 0.0.0.0.1
+        
+        // First try simple .1
+        let candidate = format!("M {}.1", number_part);
+        if !is_name_taken(&candidate) {
+            return candidate;
         }
-        // If .0.1 is taken, keep trying deeper levels
-        let mut test_name = format!("{}.0", number_part);
+        
+        // Then try .0.1, .0.0.1, .0.0.0.1, etc.
+        let mut test_name = number_part.to_string();
         for _ in 0..10 {
-            test_name = format!("{}.0.1", test_name);
-            let candidate = format!("M {}", test_name);
+            test_name = format!("{}.0", test_name);
+            let candidate = format!("M {}.1", test_name);
             if !is_name_taken(&candidate) {
                 return candidate;
             }
