@@ -172,6 +172,14 @@ pub fn ui_system(
     for mut egui_context in contexts.iter_mut() {
         let ctx = egui_context.get_mut();
 
+        // Configure scroll style to use solid scrollbars that don't overlap content
+        ctx.style_mut(|style| {
+            style.spacing.scroll = egui::style::ScrollStyle::solid();
+            style.spacing.scroll.bar_outer_margin = 0.0;  // Remove dead space to right of scrollbar
+            style.spacing.scroll.bar_inner_margin = 0.0;  // Content sits close to scrollbar
+            style.spacing.scroll.floating_allocated_width = 0.0;  // No allocated space for floating bars
+        });
+
         // Clear viewport rect at the start of each frame
         viewport_rect.rect = None;
 
@@ -231,7 +239,9 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                 // No content - empty placeholder
             }
             Panel::Inspector => {
-                egui::ScrollArea::vertical().show(ui, |ui| {
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
                     ui.separator();
                     ui.label("Object properties and settings");
                     ui.add_space(10.0);
@@ -239,7 +249,9 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                 });
             }
             Panel::Console => {
-                egui::ScrollArea::vertical().show(ui, |ui| {
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
                     ui.separator();
                     ui.label("Application logs and messages");
                     ui.add_space(10.0);
@@ -247,7 +259,9 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                 });
             }
             Panel::Hierarchy => {
-                egui::ScrollArea::vertical().show(ui, |ui| {
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
                     ui.separator();
                     ui.label("Scene object tree");
                     ui.add_space(10.0);
@@ -256,7 +270,9 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                 });
             }
             Panel::Assets => {
-                egui::ScrollArea::vertical().show(ui, |ui| {
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
                     ui.separator();
                     ui.label("Project assets and resources");
                     ui.add_space(10.0);
@@ -266,7 +282,9 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                 });
             }
             Panel::CircleSliders => {
-                egui::ScrollArea::vertical().show(ui, |ui| {
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
                     ui.checkbox(&mut self.widget_demo_state.enable_snapping, "Enable Snapping (11.25°)");
                     ui.add_space(10.0);
                     
@@ -305,7 +323,9 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                 });
             }
             Panel::QuaternionBall => {
-                egui::ScrollArea::vertical().show(ui, |ui| {
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
                     ui.checkbox(&mut self.widget_demo_state.qball_snapping, "Enable Snapping (11.25°)");
                     ui.add_space(10.0);
                     
@@ -424,7 +444,9 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                 render_modes_panel(ui, self.widget_demo_state);
             }
             Panel::NameTypeEditor => {
-                egui::ScrollArea::vertical().show(ui, |ui| {
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
                     ui.spacing_mut().item_spacing.y = 2.0;
                     
                     // Three buttons at the top
@@ -467,7 +489,11 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                 });
             }
             Panel::AdhesionSettings => {
-                egui::ScrollArea::vertical().show(ui, |ui| {
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
+                    // Force content to fill available width
+                    ui.set_width(ui.available_width());
                     ui.add_space(10.0);
                     
                     // Adhesion Can Break checkbox
@@ -570,7 +596,11 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                 });
             }
             Panel::ParentSettings => {
-                egui::ScrollArea::vertical().show(ui, |ui| {
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
+                    // Force content to fill available width
+                    ui.set_width(ui.available_width());
                     ui.add_space(10.0);
                     
                     // Split Mass (1.0 to 3.0)
@@ -640,7 +670,9 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                 });
             }
             Panel::TimeSlider => {
-                egui::ScrollArea::vertical().show(ui, |ui| {
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
                     ui.add_space(10.0);
                     
                     ui.horizontal(|ui| {
@@ -699,7 +731,9 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
 }
 
 fn render_modes_panel(ui: &mut egui::Ui, widget_demo_state: &mut WidgetDemoState) {
-    egui::ScrollArea::vertical().show(ui, |ui| {
+    egui::ScrollArea::vertical()
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
         // Handle rename dialog
         let mut rename_confirmed = false;
         let mut rename_cancelled = false;
