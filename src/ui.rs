@@ -731,61 +731,78 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
 }
 
 fn render_modes_panel(ui: &mut egui::Ui, widget_demo_state: &mut WidgetDemoState) {
-    egui::ScrollArea::vertical()
-        .auto_shrink([false, false])
-        .show(ui, |ui| {
-        // Handle rename dialog
-        let mut rename_confirmed = false;
-        let mut rename_cancelled = false;
-        
-        if let Some(_rename_idx) = widget_demo_state.renaming_mode {
-            egui::Window::new("Rename Mode")
-                .collapsible(false)
-                .resizable(false)
-                .show(ui.ctx(), |ui| {
-                    ui.label("Mode Name:");
-                    let response = ui.text_edit_singleline(&mut widget_demo_state.rename_buffer);
-                    
-                    if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+    // Handle rename dialog (outside scroll area)
+    let mut rename_confirmed = false;
+    let mut rename_cancelled = false;
+
+    if let Some(_rename_idx) = widget_demo_state.renaming_mode {
+        egui::Window::new("Rename Mode")
+            .collapsible(false)
+            .resizable(false)
+            .show(ui.ctx(), |ui| {
+                ui.label("Mode Name:");
+                let response = ui.text_edit_singleline(&mut widget_demo_state.rename_buffer);
+
+                if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                    rename_confirmed = true;
+                }
+
+                ui.horizontal(|ui| {
+                    if ui.button("OK").clicked() {
                         rename_confirmed = true;
                     }
-                    
-                    ui.horizontal(|ui| {
-                        if ui.button("OK").clicked() {
-                            rename_confirmed = true;
-                        }
-                        if ui.button("Cancel").clicked() {
-                            rename_cancelled = true;
-                        }
-                    });
-                    
-                    // Auto-focus the text field
-                    if !response.has_focus() {
-                        response.request_focus();
+                    if ui.button("Cancel").clicked() {
+                        rename_cancelled = true;
                     }
                 });
-        }
-        
-        if rename_confirmed {
-            if let Some(_rename_idx) = widget_demo_state.renaming_mode {
-                let trimmed = widget_demo_state.rename_buffer.trim();
-                if !trimmed.is_empty() && _rename_idx < widget_demo_state.modes_data.len() {
-                    widget_demo_state.modes_data[_rename_idx].0 = trimmed.to_string();
-                    info!("Renamed mode {} to {}", _rename_idx, trimmed);
+
+                // Auto-focus the text field
+                if !response.has_focus() {
+                    response.request_focus();
                 }
+            });
+    }
+
+    if rename_confirmed {
+        if let Some(_rename_idx) = widget_demo_state.renaming_mode {
+            let trimmed = widget_demo_state.rename_buffer.trim();
+            if !trimmed.is_empty() && _rename_idx < widget_demo_state.modes_data.len() {
+                widget_demo_state.modes_data[_rename_idx].0 = trimmed.to_string();
+                info!("Renamed mode {} to {}", _rename_idx, trimmed);
             }
-            widget_demo_state.renaming_mode = None;
-            widget_demo_state.rename_buffer.clear();
         }
-        
-        if rename_cancelled {
-            widget_demo_state.renaming_mode = None;
-            widget_demo_state.rename_buffer.clear();
-        }
-        
+        widget_demo_state.renaming_mode = None;
+        widget_demo_state.rename_buffer.clear();
+    }
+
+    if rename_cancelled {
+        widget_demo_state.renaming_mode = None;
+        widget_demo_state.rename_buffer.clear();
+    }
+
+    // Draw buttons outside scroll area
+    let (add_clicked, remove_clicked, copy_clicked, copy_into_clicked, reset_clicked) = widgets::modes_buttons(
+        ui,
+        widget_demo_state.modes_data.len(),
+        widget_demo_state.selected_mode,
+        widget_demo_state.initial_mode,
+    );
+
+    ui.separator();
+
+    // Show instruction text if in copy into mode (also outside scroll area)
+    if widget_demo_state.copy_into_dialog_open {
+        ui.colored_label(egui::Color32::YELLOW, "Select target mode to copy into:");
+        ui.add_space(5.0);
+    }
+
+    // Now create scroll area for the list
+    let (selection_changed, initial_changed, rename_idx, color_change) = egui::ScrollArea::vertical()
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
         let available_width = ui.available_width();
-        
-        let (selection_changed, initial_changed, add_clicked, remove_clicked, copy_clicked, copy_into_clicked, rename_idx, color_change) = widgets::modes_list(
+
+        widgets::modes_list_items(
             ui,
             &widget_demo_state.modes_data,
             &mut widget_demo_state.selected_mode,
@@ -793,156 +810,179 @@ fn render_modes_panel(ui: &mut egui::Ui, widget_demo_state: &mut WidgetDemoState
             available_width,
             widget_demo_state.copy_into_dialog_open,
             &mut widget_demo_state.color_picker_state,
-        );
-        
-        if selection_changed {
-            // If in copy into mode, this is the target selection
-            if widget_demo_state.copy_into_dialog_open {
-                let source_idx = widget_demo_state.copy_into_source;
-                let target_idx = widget_demo_state.selected_mode;
-                
-                if source_idx != target_idx && source_idx < widget_demo_state.modes_data.len() 
-                    && target_idx < widget_demo_state.modes_data.len() {
-                    // Copy the color from source to target
-                    let source_color = widget_demo_state.modes_data[source_idx].1;
-                    widget_demo_state.modes_data[target_idx].1 = source_color;
-                    info!("Copied mode {} into mode {}", source_idx, target_idx);
-                }
-                
-                // Exit copy into mode
-                widget_demo_state.copy_into_dialog_open = false;
-            } else {
-                info!("Selected mode changed to: {}", widget_demo_state.selected_mode);
-            }
-        }
-        if initial_changed {
-            info!("Initial mode changed to: {}", widget_demo_state.initial_mode);
-        }
-        
-        // Handle rename request
-        if let Some(idx) = rename_idx {
-            widget_demo_state.renaming_mode = Some(idx);
-            widget_demo_state.rename_buffer = widget_demo_state.modes_data[idx].0.clone();
-        }
-        
-        // Handle color change from context menu color picker
-        if let Some((idx, new_color)) = color_change {
-            if idx < widget_demo_state.modes_data.len() {
-                widget_demo_state.modes_data[idx].1 = new_color;
-                info!("Changed color of mode {}", idx);
-            }
-        }
-        
-        // Handle copy mode
-        if copy_clicked {
-            let selected_idx = widget_demo_state.selected_mode;
-            if selected_idx < widget_demo_state.modes_data.len() {
-                let insert_idx = selected_idx + 1;
-                
-                // Copy the selected mode
-                let (name, color) = widget_demo_state.modes_data[selected_idx].clone();
-                
-                // Generate new name
-                let existing_names: Vec<String> = widget_demo_state.modes_data.iter()
-                    .map(|(n, _)| n.clone())
-                    .collect();
-                let new_name = widgets::generate_next_mode_name(&name, &existing_names);
-                
-                widget_demo_state.modes_data.insert(insert_idx, (new_name, color));
-                
-                // Adjust selection to the new copy
-                widget_demo_state.selected_mode = insert_idx;
-                
-                // Adjust initial mode if needed
-                if insert_idx <= widget_demo_state.initial_mode {
-                    widget_demo_state.initial_mode += 1;
-                }
-                
-                info!("Copied mode at index {}", selected_idx);
-            }
-        }
-        
-        // Handle copy into mode
-        if copy_into_clicked {
-            let selected_idx = widget_demo_state.selected_mode;
-            if selected_idx < widget_demo_state.modes_data.len() {
-                // Enter copy into mode - user will click on target mode directly
-                widget_demo_state.copy_into_dialog_open = true;
-                widget_demo_state.copy_into_source = selected_idx;
-            }
-        }
-        
-        // Don't handle add/remove/copy when in copy into mode
+        )
+    }).inner;
+
+    if selection_changed {
+        // If in copy into mode, this is the target selection
         if widget_demo_state.copy_into_dialog_open {
-            return;
+            let source_idx = widget_demo_state.copy_into_source;
+            let target_idx = widget_demo_state.selected_mode;
+
+            if source_idx != target_idx && source_idx < widget_demo_state.modes_data.len()
+                && target_idx < widget_demo_state.modes_data.len() {
+                // Copy the color from source to target
+                let source_color = widget_demo_state.modes_data[source_idx].1;
+                widget_demo_state.modes_data[target_idx].1 = source_color;
+                info!("Copied mode {} into mode {}", source_idx, target_idx);
+            }
+
+            // Exit copy into mode
+            widget_demo_state.copy_into_dialog_open = false;
+        } else {
+            info!("Selected mode changed to: {}", widget_demo_state.selected_mode);
         }
-        
-        // Handle add mode
-        if add_clicked {
-            let selected_idx = widget_demo_state.selected_mode;
-            let insert_idx = if selected_idx < widget_demo_state.modes_data.len() {
-                selected_idx + 1
-            } else {
-                widget_demo_state.modes_data.len()
-            };
-            
-            // Generate new mode name
+    }
+    if initial_changed {
+        info!("Initial mode changed to: {}", widget_demo_state.initial_mode);
+    }
+
+    // Handle rename request
+    if let Some(idx) = rename_idx {
+        widget_demo_state.renaming_mode = Some(idx);
+        widget_demo_state.rename_buffer = widget_demo_state.modes_data[idx].0.clone();
+    }
+
+    // Handle color change from context menu color picker
+    if let Some((idx, new_color)) = color_change {
+        if idx < widget_demo_state.modes_data.len() {
+            widget_demo_state.modes_data[idx].1 = new_color;
+            info!("Changed color of mode {}", idx);
+        }
+    }
+
+    // Handle copy mode
+    if copy_clicked {
+        let selected_idx = widget_demo_state.selected_mode;
+        if selected_idx < widget_demo_state.modes_data.len() {
+            let insert_idx = selected_idx + 1;
+
+            // Copy the selected mode
+            let (name, color) = widget_demo_state.modes_data[selected_idx].clone();
+
+            // Generate new name
             let existing_names: Vec<String> = widget_demo_state.modes_data.iter()
-                .map(|(name, _)| name.clone())
+                .map(|(n, _)| n.clone())
                 .collect();
-            let base_name = if selected_idx < widget_demo_state.modes_data.len() {
-                &widget_demo_state.modes_data[selected_idx].0
-            } else {
-                "M 0"
-            };
-            let new_name = widgets::generate_next_mode_name(base_name, &existing_names);
-            
-            // Generate random color
+            let new_name = widgets::generate_next_mode_name(&name, &existing_names);
+
+            widget_demo_state.modes_data.insert(insert_idx, (new_name, color));
+
+            // Adjust selection to the new copy
+            widget_demo_state.selected_mode = insert_idx;
+
+            // Adjust initial mode if needed
+            if insert_idx <= widget_demo_state.initial_mode {
+                widget_demo_state.initial_mode += 1;
+            }
+
+            info!("Copied mode at index {}", selected_idx);
+        }
+    }
+
+    // Handle copy into mode
+    if copy_into_clicked {
+        let selected_idx = widget_demo_state.selected_mode;
+        if selected_idx < widget_demo_state.modes_data.len() {
+            // Enter copy into mode - user will click on target mode directly
+            widget_demo_state.copy_into_dialog_open = true;
+            widget_demo_state.copy_into_source = selected_idx;
+        }
+    }
+
+    // Handle reset mode
+    if reset_clicked {
+        let selected_idx = widget_demo_state.selected_mode;
+        if selected_idx < widget_demo_state.modes_data.len() {
+            // Generate a new random color for the selected mode
             let mut hasher = RandomState::new().build_hasher();
-            insert_idx.hash(&mut hasher);
+            selected_idx.hash(&mut hasher);
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+                .hash(&mut hasher);
             let hash = hasher.finish();
             let new_color = egui::Color32::from_rgb(
                 ((hash % 156) + 100) as u8,
                 (((hash >> 8) % 156) + 100) as u8,
                 (((hash >> 16) % 156) + 100) as u8,
             );
-            
-            widget_demo_state.modes_data.insert(insert_idx, (new_name, new_color));
-            
-            // Adjust selection if needed
-            if insert_idx <= selected_idx {
-                widget_demo_state.selected_mode = selected_idx + 1;
+            widget_demo_state.modes_data[selected_idx].1 = new_color;
+            info!("Reset mode {} color", selected_idx);
+        }
+    }
+
+    // Don't handle add/remove/copy when in copy into mode
+    if widget_demo_state.copy_into_dialog_open {
+        return;
+    }
+
+    // Handle add mode
+    if add_clicked {
+        let selected_idx = widget_demo_state.selected_mode;
+        let insert_idx = if selected_idx < widget_demo_state.modes_data.len() {
+            selected_idx + 1
+        } else {
+            widget_demo_state.modes_data.len()
+        };
+
+        // Generate new mode name
+        let existing_names: Vec<String> = widget_demo_state.modes_data.iter()
+            .map(|(name, _)| name.clone())
+            .collect();
+        let base_name = if selected_idx < widget_demo_state.modes_data.len() {
+            &widget_demo_state.modes_data[selected_idx].0
+        } else {
+            "M 0"
+        };
+        let new_name = widgets::generate_next_mode_name(base_name, &existing_names);
+
+        // Generate random color
+        let mut hasher = RandomState::new().build_hasher();
+        insert_idx.hash(&mut hasher);
+        let hash = hasher.finish();
+        let new_color = egui::Color32::from_rgb(
+            ((hash % 156) + 100) as u8,
+            (((hash >> 8) % 156) + 100) as u8,
+            (((hash >> 16) % 156) + 100) as u8,
+        );
+
+        widget_demo_state.modes_data.insert(insert_idx, (new_name, new_color));
+
+        // Adjust selection if needed
+        if insert_idx <= selected_idx {
+            widget_demo_state.selected_mode = selected_idx + 1;
+        }
+
+        // Adjust initial mode if needed
+        if insert_idx <= widget_demo_state.initial_mode {
+            widget_demo_state.initial_mode += 1;
+        }
+
+        info!("Added new mode at index {}", insert_idx);
+    }
+
+    // Handle remove mode
+    if remove_clicked {
+        let selected = widget_demo_state.selected_mode;
+        if widget_demo_state.modes_data.len() > 1
+            && selected < widget_demo_state.modes_data.len()
+            && selected != widget_demo_state.initial_mode {
+
+            widget_demo_state.modes_data.remove(selected);
+
+            // Adjust selected index
+            if widget_demo_state.selected_mode >= widget_demo_state.modes_data.len() {
+                widget_demo_state.selected_mode = widget_demo_state.modes_data.len() - 1;
             }
-            
+
             // Adjust initial mode if needed
-            if insert_idx <= widget_demo_state.initial_mode {
-                widget_demo_state.initial_mode += 1;
+            if widget_demo_state.initial_mode > selected {
+                widget_demo_state.initial_mode -= 1;
             }
-            
-            info!("Added new mode at index {}", insert_idx);
+
+            info!("Removed mode at index {}", selected);
         }
-        
-        // Handle remove mode
-        if remove_clicked {
-            let selected = widget_demo_state.selected_mode;
-            if widget_demo_state.modes_data.len() > 1 
-                && selected < widget_demo_state.modes_data.len()
-                && selected != widget_demo_state.initial_mode {
-                
-                widget_demo_state.modes_data.remove(selected);
-                
-                // Adjust selected index
-                if widget_demo_state.selected_mode >= widget_demo_state.modes_data.len() {
-                    widget_demo_state.selected_mode = widget_demo_state.modes_data.len() - 1;
-                }
-                
-                // Adjust initial mode if needed
-                if widget_demo_state.initial_mode > selected {
-                    widget_demo_state.initial_mode -= 1;
-                }
-                
-                info!("Removed mode at index {}", selected);
-            }
-        }
-    });
+    }
 }

@@ -610,9 +610,66 @@ fn snap_quaternion_to_grid(q: Quat, grid_angle_deg: f32) -> Quat {
     Quat::from_mat3(&snapped_matrix).normalize()
 }
 
-/// Modes list widget - displays a list of modes with colored buttons and radio buttons for selection
-/// Returns (selection_changed, initial_changed, add_clicked, remove_clicked, copy_clicked, copy_into_clicked, rename_index, color_change)
-pub fn modes_list(
+/// Modes buttons widget - displays just the control buttons
+/// Returns (add_clicked, remove_clicked, copy_clicked, copy_into_clicked, reset_clicked)
+pub fn modes_buttons(
+    ui: &mut Ui,
+    modes_count: usize,
+    selected_index: usize,
+    initial_mode: usize,
+) -> (bool, bool, bool, bool, bool) {
+    let mut add_clicked = false;
+    let mut remove_clicked = false;
+    let mut copy_clicked = false;
+    let mut copy_into_clicked = false;
+    let mut reset_clicked = false;
+
+    // Add/Remove/Copy buttons at the top
+    ui.horizontal(|ui| {
+        let button_size = egui::vec2(20.0, 20.0);
+
+        if ui.add_sized(button_size, egui::Button::new("+")).clicked() {
+            add_clicked = true;
+        }
+
+        let can_remove = modes_count > 1 && selected_index != initial_mode;
+        let remove_button = ui.add_enabled_ui(can_remove, |ui| {
+            ui.add_sized(button_size, egui::Button::new("-"))
+        }).inner;
+
+        if remove_button.clicked() {
+            remove_clicked = true;
+        }
+
+        // Show tooltip if hovering remove button and it's disabled
+        if remove_button.hovered() && !can_remove && selected_index == initial_mode {
+            remove_button.on_hover_text("Cannot remove a mode marked as initial");
+        }
+
+        // Copy button - compact
+        if ui.small_button("Copy").clicked() {
+            copy_clicked = true;
+        }
+    });
+
+    ui.horizontal(|ui| {
+        // Reset button with counterclockwise arrow circle icon
+        if ui.small_button("⟲").on_hover_text("Reset mode").clicked() {
+            reset_clicked = true;
+        }
+
+        // Copy Into button - compact
+        if ui.small_button("Copy Into").clicked() {
+            copy_into_clicked = true;
+        }
+    });
+
+    (add_clicked, remove_clicked, copy_clicked, copy_into_clicked, reset_clicked)
+}
+
+/// Modes list items widget - displays only the list of modes (for use in scroll area)
+/// Returns (selection_changed, initial_changed, rename_index, color_change)
+pub fn modes_list_items(
     ui: &mut Ui,
     modes: &[(String, egui::Color32)], // (name, color) pairs
     selected_index: &mut usize,
@@ -620,58 +677,11 @@ pub fn modes_list(
     _width: f32,
     copy_into_mode: bool,
     color_picker_state: &mut Option<(usize, egui::ecolor::Hsva)>,
-) -> (bool, bool, bool, bool, bool, bool, Option<usize>, Option<(usize, egui::Color32)>) {
+) -> (bool, bool, Option<usize>, Option<(usize, egui::Color32)>) {
     let mut selection_changed = false;
     let mut initial_changed = false;
-    let mut add_clicked = false;
-    let mut remove_clicked = false;
-    let mut copy_clicked = false;
-    let mut copy_into_clicked = false;
     let mut rename_index = None;
     let mut color_picker_index: Option<(usize, egui::Color32)> = None;
-    
-    // Add/Remove/Copy buttons at the top
-    ui.horizontal(|ui| {
-        let button_size = egui::vec2(20.0, 20.0);
-        
-        if ui.add_sized(button_size, egui::Button::new("+")).clicked() {
-            add_clicked = true;
-        }
-        
-        let can_remove = modes.len() > 1 && *selected_index != *initial_mode;
-        let remove_button = ui.add_enabled_ui(can_remove, |ui| {
-            ui.add_sized(button_size, egui::Button::new("-"))
-        }).inner;
-        
-        if remove_button.clicked() {
-            remove_clicked = true;
-        }
-        
-        // Show tooltip if hovering remove button and it's disabled
-        if remove_button.hovered() && !can_remove && *selected_index == *initial_mode {
-            remove_button.on_hover_text("Cannot remove a mode marked as initial");
-        }
-        
-        // Copy button - compact
-        if ui.small_button("Copy").clicked() {
-            copy_clicked = true;
-        }
-    });
-    
-    ui.horizontal(|ui| {
-        // Copy Into button - compact
-        if ui.small_button("Copy Into").clicked() {
-            copy_into_clicked = true;
-        }
-    });
-    
-    ui.separator();
-    
-    // Show instruction text if in copy into mode
-    if copy_into_mode {
-        ui.colored_label(egui::Color32::YELLOW, "Select target mode to copy into:");
-        ui.add_space(5.0);
-    }
     
     for (i, (name, color)) in modes.iter().enumerate() {
         let is_selected = i == *selected_index;
@@ -847,8 +857,8 @@ pub fn modes_list(
             }
         });
     }
-    
-    (selection_changed, initial_changed, add_clicked, remove_clicked, copy_clicked, copy_into_clicked, rename_index, color_picker_index)
+
+    (selection_changed, initial_changed, rename_index, color_picker_index)
 }
 
 /// Generate the next available mode name based on a base name
