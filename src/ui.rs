@@ -375,18 +375,33 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                                 
                                 // Mode dropdown for ball 1
                                 let mode_color = self.widget_demo_state.modes_data[self.widget_demo_state.qball1_mode].1;
+                                let brightness = mode_color.r() as f32 * 0.299 + mode_color.g() as f32 * 0.587 + mode_color.b() as f32 * 0.114;
+                                let text_color = if brightness > 127.5 {
+                                    egui::Color32::BLACK
+                                } else {
+                                    egui::Color32::WHITE
+                                };
                                 egui::ComboBox::from_id_salt("qball1_mode")
                                     .selected_text(
                                         egui::RichText::new(&self.widget_demo_state.modes_data[self.widget_demo_state.qball1_mode].0)
-                                            .color(mode_color)
+                                            .color(text_color)
+                                            .background_color(mode_color)
                                     )
                                     .width(80.0)
                                     .show_ui(ui, |ui| {
                                         for (i, (mode_name, color)) in self.widget_demo_state.modes_data.iter().enumerate() {
-                                            ui.selectable_value(
-                                                &mut self.widget_demo_state.qball1_mode, 
-                                                i, 
-                                                egui::RichText::new(mode_name).color(*color)
+                                            // Calculate brightness to determine text color
+                                            let brightness = color.r() as f32 * 0.299 + color.g() as f32 * 0.587 + color.b() as f32 * 0.114;
+                                            let text_color = if brightness > 127.5 {
+                                                egui::Color32::BLACK  // Black text for light backgrounds
+                                            } else {
+                                                egui::Color32::WHITE  // White text for dark backgrounds
+                                            };
+
+                                            let _response = ui.selectable_value(
+                                                &mut self.widget_demo_state.qball1_mode,
+                                                i,
+                                                egui::RichText::new(mode_name).color(text_color).background_color(*color)
                                             );
                                         }
                                     });
@@ -420,18 +435,33 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
                                 
                                 // Mode dropdown for ball 2
                                 let mode_color = self.widget_demo_state.modes_data[self.widget_demo_state.qball2_mode].1;
+                                let brightness = mode_color.r() as f32 * 0.299 + mode_color.g() as f32 * 0.587 + mode_color.b() as f32 * 0.114;
+                                let text_color = if brightness > 127.5 {
+                                    egui::Color32::BLACK
+                                } else {
+                                    egui::Color32::WHITE
+                                };
                                 egui::ComboBox::from_id_salt("qball2_mode")
                                     .selected_text(
                                         egui::RichText::new(&self.widget_demo_state.modes_data[self.widget_demo_state.qball2_mode].0)
-                                            .color(mode_color)
+                                            .color(text_color)
+                                            .background_color(mode_color)
                                     )
                                     .width(80.0)
                                     .show_ui(ui, |ui| {
                                         for (i, (mode_name, color)) in self.widget_demo_state.modes_data.iter().enumerate() {
-                                            ui.selectable_value(
-                                                &mut self.widget_demo_state.qball2_mode, 
-                                                i, 
-                                                egui::RichText::new(mode_name).color(*color)
+                                            // Calculate brightness to determine text color
+                                            let brightness = color.r() as f32 * 0.299 + color.g() as f32 * 0.587 + color.b() as f32 * 0.114;
+                                            let text_color = if brightness > 127.5 {
+                                                egui::Color32::BLACK  // Black text for light backgrounds
+                                            } else {
+                                                egui::Color32::WHITE  // White text for dark backgrounds
+                                            };
+
+                                            let _response = ui.selectable_value(
+                                                &mut self.widget_demo_state.qball2_mode,
+                                                i,
+                                                egui::RichText::new(mode_name).color(text_color).background_color(*color)
                                             );
                                         }
                                     });
