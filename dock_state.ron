@@ -45,7 +45,7 @@
                             y: 752.0,
                         ),
                     ),
-                    fraction: 0.8678917,
+                    fraction: 0.843273,
                     fully_collapsed: false,
                     collapsed_leaf_count: 0,
                     absolute_size_left: None,
@@ -92,7 +92,7 @@
                         ParentSettings,
                         AdhesionSettings,
                     ],
-                    active: (1),
+                    active: (2),
                     scroll: 0.0,
                     collapsed: false,
                 )),
@@ -103,11 +103,11 @@
                             y: 22.0,
                         ),
                         max: (
-                            x: 1748.0,
+                            x: 1707.4286,
                             y: 752.0,
                         ),
                     ),
-                    fraction: 0.83210397,
+                    fraction: 0.89002943,
                     fully_collapsed: false,
                     collapsed_leaf_count: 0,
                     absolute_size_left: None,
@@ -115,7 +115,7 @@
                 Leaf((
                     rect: (
                         min: (
-                            x: 1749.1428,
+                            x: 1708.5714,
                             y: 22.0,
                         ),
                         max: (
@@ -125,7 +125,7 @@
                     ),
                     viewport: (
                         min: (
-                            x: 1749.1563,
+                            x: 1708.5625,
                             y: 22.0,
                         ),
                         max: (
@@ -193,8 +193,8 @@
                             y: 22.0,
                         ),
                         max: (
-                            x: 1748.0,
-                            y: 629.1429,
+                            x: 1707.4286,
+                            y: 671.4286,
                         ),
                     ),
                     viewport: (
@@ -203,8 +203,8 @@
                             y: 22.0,
                         ),
                         max: (
-                            x: 1748.0,
-                            y: 629.15625,
+                            x: 1707.4375,
+                            y: 671.4375,
                         ),
                     ),
                     tabs: [
@@ -218,10 +218,10 @@
                     rect: (
                         min: (
                             x: 317.7143,
-                            y: 629.7143,
+                            y: 672.0,
                         ),
                         max: (
-                            x: 1748.0,
+                            x: 1707.4286,
                             y: 752.0,
                         ),
                     ),
@@ -288,20 +288,20 @@
                     rect: (
                         min: (
                             x: 317.7143,
-                            y: 629.7143,
+                            y: 672.0,
                         ),
                         max: (
-                            x: 1032.5714,
+                            x: 1012.0,
                             y: 752.0,
                         ),
                     ),
                     viewport: (
                         min: (
                             x: 317.71875,
-                            y: 653.71875,
+                            y: 696.0,
                         ),
                         max: (
-                            x: 1032.5625,
+                            x: 1012.0,
                             y: 752.0,
                         ),
                     ),
@@ -315,21 +315,21 @@
                 Leaf((
                     rect: (
                         min: (
-                            x: 1033.1428,
-                            y: 629.7143,
+                            x: 1013.1429,
+                            y: 672.0,
                         ),
                         max: (
-                            x: 1748.0,
+                            x: 1707.4286,
                             y: 752.0,
                         ),
                     ),
                     viewport: (
                         min: (
-                            x: 1033.1563,
-                            y: 629.71875,
+                            x: 1013.15625,
+                            y: 672.0,
                         ),
                         max: (
-                            x: 1748.0,
+                            x: 1707.4375,
                             y: 752.0,
                         ),
                     ),
@@ -406,32 +406,8 @@
                     scroll: 0.0,
                     collapsed: false,
                 )),
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
-                Empty,
             ],
-            focused_node: Some((17)),
+            focused_node: Some((4)),
             collapsed: false,
             collapsed_leaf_count: 0,
         )),
