@@ -611,39 +611,30 @@ fn snap_quaternion_to_grid(q: Quat, grid_angle_deg: f32) -> Quat {
 }
 
 /// Modes buttons widget - displays just the control buttons
-/// Returns (copy_clicked, copy_into_clicked, reset_clicked)
+/// Returns (copy_into_clicked, reset_clicked)
 pub fn modes_buttons(
     ui: &mut Ui,
     _modes_count: usize,
     _selected_index: usize,
     _initial_mode: usize,
-) -> (bool, bool, bool) {
-    let mut copy_clicked = false;
+) -> (bool, bool) {
     let mut copy_into_clicked = false;
     let mut reset_clicked = false;
 
-    // Copy/Copy Into buttons on first line
+    // Copy Into and Reset buttons on same line
     ui.horizontal(|ui| {
-        // Copy button
-        if ui.small_button("Copy").clicked() {
-            copy_clicked = true;
-        }
-
         // Copy Into button
         if ui.small_button("Copy Into").clicked() {
             copy_into_clicked = true;
         }
-    });
 
-    // Reset button on second line
-    ui.horizontal(|ui| {
         // Reset button with counterclockwise arrow circle icon
         if ui.small_button("⟲").on_hover_text("Reset mode").clicked() {
             reset_clicked = true;
         }
     });
 
-    (copy_clicked, copy_into_clicked, reset_clicked)
+    (copy_into_clicked, reset_clicked)
 }
 
 /// Modes list items widget - displays only the list of modes (for use in scroll area)

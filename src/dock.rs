@@ -15,7 +15,18 @@ pub enum Panel {
     BottomPanel,
     Viewport,
 
-    // Dynamic windows (can be opened/closed from menu)
+    // Dynamic windows (can be opened/closed from menu) - matching BioSpheres-Q naming
+    CellInspector,
+    GenomeEditor,
+    SceneManager,
+    PerformanceMonitor,
+    RenderingControls,
+    TimeScrubber,
+    ThemeEditor,
+    CameraSettings,
+    LightingSettings,
+    
+    // Legacy names for compatibility
     Inspector,
     Console,
     Hierarchy,
@@ -42,6 +53,17 @@ impl std::fmt::Display for Panel {
             Panel::RightPanel => write!(f, "Right Panel"),
             Panel::BottomPanel => write!(f, "Bottom Panel"),
             Panel::Viewport => write!(f, "Viewport"),
+            // BioSpheres-Q standard names
+            Panel::CellInspector => write!(f, "Cell Inspector"),
+            Panel::GenomeEditor => write!(f, "Genome Editor"),
+            Panel::SceneManager => write!(f, "Scene Manager"),
+            Panel::PerformanceMonitor => write!(f, "Performance Monitor"),
+            Panel::RenderingControls => write!(f, "Rendering Controls"),
+            Panel::TimeScrubber => write!(f, "Time Scrubber"),
+            Panel::ThemeEditor => write!(f, "Theme Editor"),
+            Panel::CameraSettings => write!(f, "Camera Settings"),
+            Panel::LightingSettings => write!(f, "Lighting Settings"),
+            // Legacy names
             Panel::Inspector => write!(f, "Inspector"),
             Panel::Console => write!(f, "Console"),
             Panel::Hierarchy => write!(f, "Hierarchy"),
@@ -49,7 +71,7 @@ impl std::fmt::Display for Panel {
             Panel::CircleSliders => write!(f, "Parent Split Angle"),
             Panel::QuaternionBall => write!(f, "Child Settings"),
             Panel::Modes => write!(f, "Modes"),
-            Panel::NameTypeEditor => write!(f, "Genome Editor"),
+            Panel::NameTypeEditor => write!(f, "Name & Type"),
             Panel::AdhesionSettings => write!(f, "Adhesion Settings"),
             Panel::ParentSettings => write!(f, "Parent Settings"),
             Panel::TimeSlider => write!(f, "Time Slider"),
@@ -192,20 +214,18 @@ pub fn save_on_exit(
     }
 }
 
-pub fn show_windows_menu(ui: &mut bevy_egui::egui::Ui, dock_resource: &mut DockResource) {
+pub fn show_windows_menu(ui: &mut bevy_egui::egui::Ui, dock_resource: &mut DockResource, _global_ui_state: &crate::ui::GlobalUiState) {
     // List of dynamic windows that can be toggled
     let dynamic_windows = [
-        Panel::Inspector,
-        Panel::Console,
-        Panel::Hierarchy,
-        Panel::Assets,
-        Panel::CircleSliders,
-        Panel::QuaternionBall,
-        Panel::Modes,
-        Panel::NameTypeEditor,
-        Panel::AdhesionSettings,
-        Panel::ParentSettings,
-        Panel::TimeSlider,
+        Panel::GenomeEditor,
+        Panel::CellInspector,
+        Panel::SceneManager,
+        Panel::TimeScrubber,
+        Panel::PerformanceMonitor,
+        Panel::RenderingControls,
+        Panel::ThemeEditor,
+        Panel::CameraSettings,
+        Panel::LightingSettings,
     ];
 
     for panel in &dynamic_windows {
