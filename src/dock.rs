@@ -31,7 +31,7 @@ pub enum Panel {
 
 impl Panel {
     pub fn is_placeholder(&self) -> bool {
-        matches!(self, Panel::LeftPanel | Panel::RightPanel | Panel::BottomPanel | Panel::Viewport)
+        matches!(self, Panel::LeftPanel | Panel::RightPanel | Panel::BottomPanel)
     }
 }
 

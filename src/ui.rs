@@ -807,9 +807,14 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
         }
     }
 
-    fn is_viewport(&self, _tab: &Self::Tab) -> bool {
-        // Don't use built-in viewport mode
-        false
+    fn is_placeholder(&self, tab: &Self::Tab) -> bool {
+        // Placeholder panels hold space but don't show tabs or allow dragging
+        tab.is_placeholder()
+    }
+
+    fn is_viewport(&self, tab: &Self::Tab) -> bool {
+        // Viewport is a special panel for 3D rendering
+        matches!(tab, Panel::Viewport)
     }
 
     fn clear_background(&self, tab: &Self::Tab) -> bool {
@@ -818,24 +823,14 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
         !matches!(tab, Panel::Viewport)
     }
 
-    fn is_draggable(&self, _tab: &Self::Tab) -> bool {
-        // Only placeholder panels cannot be dragged
-        !_tab.is_placeholder()
-    }
-    
-    fn hide_tab_button(&self, _tab: &Self::Tab) -> bool {
-        // Hide tab buttons only for placeholder panels
-        _tab.is_placeholder()
-    }
-
     fn is_closeable(&self, tab: &Self::Tab) -> bool {
-        // Only non-placeholder panels can be closed
-        !tab.is_placeholder()
+        // Only non-placeholder, non-viewport panels can be closed
+        !tab.is_placeholder() && !self.is_viewport(tab)
     }
 
     fn allowed_in_windows(&self, tab: &mut Self::Tab) -> bool {
-        // Only non-placeholder panels can be ejected to floating windows
-        !tab.is_placeholder()
+        // Only non-placeholder, non-viewport panels can be ejected to floating windows
+        !tab.is_placeholder() && !self.is_viewport(tab)
     }
     
     fn min_fraction(&self, tab: &Self::Tab) -> Option<f32> {
